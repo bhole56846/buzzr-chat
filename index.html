@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>buzzr</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #1b1f23;
+}
+.app {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0 auto;
+  background: #dfe6ec;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+@media (min-width: 600px) {
+  .app {
+    max-width: 430px;
+    box-shadow: 0 0 50px rgba(0,0,0,0.6);
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+  }
+}
+.statusbar {
+  background: #0a1018;
+  color: #cfe3f5;
+  font-size: 11px;
+  padding: 4px 10px;
+  display: flex;
+  justify-content: space-between;
+}
+.topbar {
+  background: linear-gradient(to bottom, #5fa9e8 0%, #1f6fc1 45%, #0d4f99 100%);
+  border-bottom: 1px solid #093366;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.4);
+}
+.topbar .back { cursor: pointer; font-size: 18px; width: 26px; }
+.topbar .right-slot { font-size: 11px; font-weight: normal; cursor: pointer; color: #d8ecff; }
+.content { flex: 1; padding: 14px; overflow-y: auto; min-height: 0; }
+.splash-logo { text-align: center; margin: 26px 0 4px; }
+.splash-logo .badge {
+  display: inline-block;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #fff;
+  background: linear-gradient(to bottom, #6fb6f0, #0e57a5);
+  border: 1px solid #0a3f7d;
+  border-radius: 10px;
+  padding: 10px 22px;
+  box-shadow: 0 4px 0 #08305f, 0 5px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+.tagline { text-align: center; color: #4a5b6b; margin: 14px 0 22px; font-size: 12px; }
+input, select {
+  width: 100%;
+  padding: 11px 12px;
+  margin-bottom: 10px;
+  border: 1px solid #9fb4c6;
+  border-radius: 6px;
+  background: linear-gradient(to bottom, #ffffff, #eef3f7);
+  color: #1c2733;
+  font-size: 14px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+}
+input::placeholder { color: #8a99a8; }
+button {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid #0a3f7d;
+  border-radius: 6px;
+  background: linear-gradient(to bottom, #79c2ff 0%, #2e84d6 50%, #1763ab 100%);
+  color: #fff;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 4px;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 0 #0a3f7d, inset 0 1px 0 rgba(255,255,255,0.6);
+  transition: transform 0.05s;
+}
+button:active { transform: translateY(1px); box-shadow: 0 1px 0 #0a3f7d, inset 0 1px 0 rgba(255,255,255,0.4); }
+.switch-link { text-align: center; margin-top: 14px; font-size: 12px; color: #1f6fc1; cursor: pointer; }
+.switch-link:hover { text-decoration: underline; }
+.error { color: #c0202f; font-size: 12px; margin-bottom: 8px; text-align: center; font-weight: bold; }
+.avatar-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 14px 0 18px; }
+.avatar-option {
+  width: 54px; height: 54px; border-radius: 8px;
+  font-size: 26px; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(to bottom, #fff, #dce6ef);
+  border: 1px solid #aebfcd; cursor: pointer;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
+.avatar-option.selected {
+  border-color: #1763ab;
+  background: linear-gradient(to bottom, #bfe0ff, #79b8ed);
+  box-shadow: 0 0 0 2px #1763ab inset;
+}
+.section-label {
+  font-size: 11px; font-weight: bold; color: #45627e;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin: 4px 0 8px 2px;
+}
+.room-card {
+  background: linear-gradient(to bottom, #ffffff, #eef3f8);
+  border: 1px solid #c4d2de;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+.room-card:active { background: linear-gradient(to bottom, #dceaf8, #c7ddf0); }
+.room-icon {
+  font-size: 22px;
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(to bottom, #79c2ff, #1763ab);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+}
+.room-info { flex: 1; min-width: 0; }
+.room-name { font-weight: bold; font-size: 14px; color: #16222d; }
+.room-desc { font-size: 11px; color: #5f7689; }
+.room-meta { text-align: right; }
+.room-count { font-size: 11px; color: #1f6fc1; font-weight: bold; }
+.online-dot {
+  display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: #2ecc71; box-shadow: 0 0 4px #2ecc71; margin-right: 4px;
+}
+.user-card {
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(to bottom, #ffffff, #e6edf3);
+  border: 1px solid #c4d2de;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+.user-card .av {
+  font-size: 26px; width: 42px; height: 42px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(to bottom, #fff, #dce6ef);
+  border: 1px solid #aebfcd;
+}
+.user-card .name { font-weight: bold; color: #16222d; font-size: 14px; }
+.user-card .status { font-size: 11px; color: #2ecc71; font-weight: bold; }
+.edit-link { margin-left: auto; color: #1f6fc1; font-size: 11px; font-weight: bold; cursor: pointer; }
+.messages { display: flex; flex-direction: column; gap: 10px; }
+.msg { max-width: 80%; }
+.msg .sender { font-size: 11px; font-weight: bold; margin-bottom: 2px; color: #45627e; }
+.msg .bubble {
+  padding: 8px 11px; border-radius: 10px; font-size: 13.5px; line-height: 1.35;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+.msg.mine { align-self: flex-end; }
+.msg.mine .sender { text-align: right; color: #0d4f99; }
+.msg.mine .bubble {
+  background: linear-gradient(to bottom, #8fd0ff, #2e84d6);
+  color: #fff; border: 1px solid #0a3f7d;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.15);
+}
+.msg.theirs .bubble {
+  background: linear-gradient(to bottom, #ffffff, #e7edf2);
+  color: #1c2733; border: 1px solid #c4d2de;
+}
+.msg .time { font-size: 9px; opacity: 0.55; margin-top: 2px; }
+.msg.mine .time { text-align: right; }
+.chat-input-bar {
+  display: flex; gap: 8px; padding: 10px;
+  background: linear-gradient(to bottom, #c9d6e1, #aebfcd);
+  border-top: 1px solid #8fa3b5;
+}
+.chat-input-bar input { flex: 1; margin-bottom: 0; }
+.chat-input-bar button { width: auto; padding: 11px 16px; margin-top: 0; }
+.logout { font-size: 11px; color: #ffe2b8; cursor: pointer; font-weight: normal; }
+.view { display: none; }
+.view.active { display: block; }
+.view.flex-active { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
+#messages-container { background: #c9d6e1; flex: 1; min-height: 0; }
+.chat-input-bar { flex-shrink: 0; }
+
+/* ---- Bot chat presence ---- */
+.bot-toggle {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(255,255,255,0.25); color: #fff;
+  font-size: 12px; font-weight: bold;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.msg.bot .bubble {
+  background: linear-gradient(to bottom, #2d3a45, #1b242c);
+  color: #d7ecff; border: 1px solid #0a1018;
+  font-family: 'Courier New', monospace; font-size: 12.5px;
+  white-space: pre-wrap;
+}
+.msg.bot .sender { color: #f5a623; }
+.bot-hint {
+  font-size: 12px; color: #45627e; background: #eef3f8;
+  border: 1px solid #c4d2de; border-radius: 8px; padding: 10px 12px; line-height: 1.5;
+}
+.bot-hint b { color: #16222d; }
+
+/* ---- In-room game panel ---- */
+.game-panel {
+  flex-shrink: 0; background: linear-gradient(to bottom, #16222d, #0a1018);
+  border-top: 1px solid #000; padding: 10px 12px; color: #d7ecff;
+}
+.game-panel-title { font-size: 11px; font-weight: bold; color: #f5a623; margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: 0.5px; }
+.game-panel-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; }
+.gp-card {
+  width: 30px; height: 42px; border-radius: 4px; background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: bold; border: 1px solid #aebfcd;
+}
+.gp-card.red { color: #c0202f; } .gp-card.black { color: #16222d; }
+.gp-chip {
+  font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: bold;
+  background: rgba(255,255,255,0.12); color: #cfe3f5;
+}
+.gp-chip.out { background: rgba(192,32,47,0.3); color: #ff9a9a; text-decoration: line-through; }
+.gp-chip.me { background: #1f6fc1; color: #fff; }
+.gp-cmds { font-size: 11px; color: #8fa3b5; margin-top: 6px; }
+.gp-cmds b { color: #d7ecff; }
+
+/* ---- mig33-style ID color / level / role system ---- */
+.lvl-tag {
+  font-size: 9px; color: #8a99a8; font-weight: normal; margin-left: 4px;
+  background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 5px;
+}
+.msg.bot .lvl-tag { color: #8fa3b5; background: rgba(255,255,255,0.08); }
+.role-pill {
+  display: inline-block; font-size: 10px; font-weight: bold; color: #fff;
+  padding: 2px 7px; border-radius: 8px; margin-left: 6px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.2);
+}
+.cr-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: bold; color: #5a4400;
+  background: linear-gradient(to bottom, #ffe9a8, #ffcf4d);
+  border: 1px solid #d8a823; border-radius: 10px; padding: 2px 8px;
+}
+.stat-card {
+  background: linear-gradient(to bottom, #ffffff, #eef3f8);
+  border: 1px solid #c4d2de; border-radius: 8px; padding: 12px;
+  margin-bottom: 16px;
+}
+.stat-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 13px; color: #16222d; }
+.stat-row .label { color: #5f7689; font-size: 12px; }
+.id-color-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: middle; box-shadow: 0 0 3px rgba(0,0,0,0.3); }
+.nav-btn-secondary {
+  background: linear-gradient(to bottom, #fff, #dce6ef);
+  color: #1763ab; border: 1px solid #aebfcd;
+  box-shadow: 0 2px 0 #aebfcd, inset 0 1px 0 rgba(255,255,255,0.6);
+  margin-bottom: 10px;
+}
+.leaderboard-block { margin-bottom: 18px; }
+.lb-row { display: flex; align-items: center; gap: 8px; padding: 7px 4px; border-bottom: 1px solid #dce6ef; font-size: 13px; }
+.lb-rank { width: 22px; font-weight: bold; color: #5f7689; text-align: center; }
+.lb-name { flex: 1; font-weight: bold; }
+.lb-val { font-size: 12px; color: #1f6fc1; font-weight: bold; }
+.color-legend { font-size: 11px; color: #45627e; line-height: 1.7; }
+.color-legend .id-color-dot { width: 9px; height: 9px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="statusbar"><span id="clock">9:41</span><span>signal full battery full</span></div>
+
+  <div id="view-auth" class="view active">
+    <div class="content">
+      <div class="splash-logo"><span class="badge">buzzr</span></div>
+      <div class="tagline">chat rooms - friends - good vibes</div>
+      <div id="auth-error" class="error"></div>
+
+      <form id="login-form">
+        <input type="email" id="login-email" placeholder="Email" required>
+        <input type="password" id="login-password" placeholder="Password" required>
+        <button type="submit">Log In</button>
+      </form>
+      <div class="switch-link" id="show-signup">New here? Create an account</div>
+
+      <form id="signup-form" style="display:none">
+        <input type="text" id="signup-username" placeholder="Username" required>
+        <input type="email" id="signup-email" placeholder="Email" required>
+        <input type="password" id="signup-password" placeholder="Password (6+ chars)" required>
+        <button type="submit">Sign Up</button>
+      </form>
+      <div class="switch-link" id="show-login" style="display:none">Already have an account? Log in</div>
+
+      <div style="margin-top:22px; padding-top:14px; border-top:1px dashed #3a4a55; text-align:center;">
+        <div class="switch-link" id="guest-preview-btn" style="color:#7fd1ff;">🧪 Continue as Guest (UI preview only — remove later)</div>
+        <div style="font-size:11px; color:#8a98a3; margin-top:4px;">No account is created and nothing is saved. Safe to tap on a real Firebase project.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-profile" class="view">
+    <div class="topbar">
+      <span class="back" style="visibility:hidden;">back</span>
+      <span>Your Profile</span>
+      <span class="logout" id="logout-btn-profile">Logout</span>
+    </div>
+    <div class="content">
+      <div class="stat-card" id="profile-stats" style="display:none;"></div>
+      <div class="section-label">Choose Avatar</div>
+      <div class="avatar-grid" id="avatar-grid"></div>
+      <div class="section-label">Username</div>
+      <input type="text" id="username-input" placeholder="Username">
+      <button id="save-profile-btn">Save & Enter Lobby</button>
+      <div id="profile-error" class="error"></div>
+      <div class="section-label" style="margin-top:18px;">ID Color Legend</div>
+      <div class="color-legend">
+        <div><span class="id-color-dot" style="background:#8b5e34;"></span>Global Admin — founder / top-level owner</div>
+        <div><span class="id-color-dot" style="background:#f1c40f;"></span>Room Admin / Moderator — manages a room</div>
+        <div><span class="id-color-dot" style="background:#e63946;"></span>Mentor — community helpers</div>
+        <div><span class="id-color-dot" style="background:#9b59b6;"></span>Merchant — trusted credit traders ($75 to unlock)</div>
+        <div><span class="id-color-dot" style="background:#95a5a6;"></span>Newbie (Lv 1-4) &nbsp;
+             <span class="id-color-dot" style="background:#3498db;"></span>Member (5-9) &nbsp;
+             <span class="id-color-dot" style="background:#2ecc71;"></span>Active (10-19)</div>
+        <div><span class="id-color-dot" style="background:#1abc9c;"></span>Senior (20-34) &nbsp;
+             <span class="id-color-dot" style="background:#e67e22;"></span>Pro (35-49) &nbsp;
+             <span class="id-color-dot" style="background:#2c3e50;"></span>Legend (50+)</div>
+      </div>
+      <div class="section-label" style="margin-top:18px;">🧪 Test Button (remove later)</div>
+      <button id="become-merchant-btn" type="button" style="background:#9b59b6;">💼 Become Merchant — $75 (demo unlock)</button>
+      <div id="merchant-demo-note" style="font-size:11px; color:#8a98a3; margin-top:6px;">
+        Demo only — no real payment is taken. Tap to instantly preview the purple Merchant ID. Remove this button before sharing the app for real.
+      </div>
+    </div>
+  </div>
+
+  <div id="view-rooms" class="view">
+    <div class="topbar">
+      <span class="back" style="visibility:hidden;">back</span>
+      <span>Lobby</span>
+      <span class="logout" id="logout-btn-rooms">Logout</span>
+    </div>
+    <div class="content">
+      <div class="user-card" id="user-card"></div>
+      <button class="nav-btn-secondary" id="leaderboard-btn">🏆 Leaderboard</button>
+      <div class="section-label">Chat Rooms</div>
+      <div id="room-list"></div>
+      <div class="section-label" style="margin-top:18px;">Games</div>
+      <div class="bot-hint">
+        Games: <b>/bot lowcard</b>, <b>/bot dice</b>, <b>/bot cricket</b> in any room, then <b>!start</b>.<br>
+        Economy: <b>/cr</b> balance, <b>/tip @user amt</b>, <b>/gift @user rose|star|diamond|crown</b>.<br>
+        Type <b>/help</b> in any room for the full command list.
+      </div>
+    </div>
+  </div>
+
+  <div id="view-leaderboard" class="view">
+    <div class="topbar">
+      <span class="back" id="leaderboard-back-btn">&#8592;</span>
+      <span>Leaderboard</span>
+      <span class="logout" style="visibility:hidden;">x</span>
+    </div>
+    <div class="content" id="leaderboard-content">
+      <div class="bot-hint">Loading rankings...</div>
+    </div>
+  </div>
+
+  <div id="view-chat" class="view flex-active" style="display:none;">
+    <div class="topbar">
+      <span class="back" id="back-btn">&#8592;</span>
+      <span id="room-title">Room</span>
+      <span style="display:flex; align-items:center; gap:8px;">
+        <span class="cr-chip" id="room-cr-chip">💰 0</span>
+        <span class="bot-toggle" id="bot-help-btn">?</span>
+      </span>
+    </div>
+    <div class="content" id="messages-container">
+      <div class="messages" id="messages"></div>
+    </div>
+    <div id="game-panel" class="game-panel" style="display:none;"></div>
+    <div class="chat-input-bar">
+      <input type="text" id="msg-input" placeholder="Type a message or !command..." autocomplete="off">
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const realDb = firebase.database();
+
+// ===================== GUEST PREVIEW MODE =====================
+// "Continue as Guest" never calls Firebase auth/signup and never writes to the
+// real database — it can NEVER become the founder/Global Admin and can NEVER
+// touch real user data. This is a TEST-ONLY button for checking the UI on your
+// phone before you remove it.
+let guestMode = false;
+
+function makeGuestRef() {
+  const chain = {
+    set: () => Promise.resolve(),
+    update: () => Promise.resolve(),
+    push: (val) => { return { key: "guest-" + Date.now() }; },
+    once: () => Promise.resolve({ val: () => null }),
+    on: (event, cb) => { if (event === "value") cb({ val: () => null }); },
+    off: () => {},
+    limitToLast: () => chain
+  };
+  return chain;
+}
+const guestDb = { ref: () => makeGuestRef() };
+
+// `db` is what the rest of the app calls — swapped to the no-op mock in guest mode.
+let db = realDb;
+
+
+const AVATARS = ["1","2","3","4","5","6","7","8","9","10","11","12"];
+const AVATAR_EMOJI = {"1":"😎","2":"🐱","3":"🦊","4":"🐸","5":"🤖","6":"👽","7":"🦄","8":"🐵","9":"👻","10":"🐯","11":"🦁","12":"🐼"};
+const ROOMS = [
+  { id: "lounge", name: "The Lounge", icon: "L", desc: "General chit-chat" },
+  { id: "music", name: "Music Mania", icon: "M", desc: "Talk tunes and artists" },
+  { id: "flirt", name: "Flirt Zone", icon: "F", desc: "Keep it sweet" },
+  { id: "gamers", name: "Gamers Den", icon: "G", desc: "Games and squads" },
+  { id: "retro", name: "Retro Vibes", icon: "R", desc: "2000s nostalgia" },
+  { id: "random", name: "Random", icon: "?", desc: "Anything goes" }
+];
+
+// ===================== mig33-STYLE ECONOMY: CR, LEVELS, ID COLORS, ROLES =====================
+// A tribute to mig33's credits (CR), migLevel, ID colors and Merchant/Mentor system.
+// No real money anywhere here - credits are earned in-app only (chat + games).
+
+const LEVEL_TIERS = [
+  { max: 4,        color: "#95a5a6", title: "Newbie" },
+  { max: 9,        color: "#3498db", title: "Member" },
+  { max: 19,       color: "#2ecc71", title: "Active" },
+  { max: 34,       color: "#1abc9c", title: "Senior" },
+  { max: 49,       color: "#e67e22", title: "Pro" },
+  { max: Infinity, color: "#2c3e50", title: "Legend" }
+];
+
+const ROLE_STYLE = {
+  globaladmin: { color: "#8b5e34", badge: "👑", label: "Global Admin" },
+  roomadmin:   { color: "#f1c40f", badge: "🛡️", label: "Room Admin" },
+  mentor:      { color: "#e63946", badge: "🎓", label: "Mentor" },
+  merchant:    { color: "#9b59b6", badge: "💼", label: "Merchant" }
+};
+// Power ranking used for permission checks (higher = more power)
+const ROLE_RANK = { member: 0, merchant: 1, mentor: 2, roomadmin: 3, globaladmin: 4 };
+function roleRank(profile) { return ROLE_RANK[roleOf(profile)] || 0; }
+
+const GIFTS = {
+  rose:    { emoji: "🌹", name: "Rose",    cost: 5 },
+  star:    { emoji: "⭐", name: "Star",    cost: 20 },
+  diamond: { emoji: "💎", name: "Diamond", cost: 100 },
+  crown:   { emoji: "👑", name: "Crown",   cost: 500 }
+};
+
+function levelFromXp(xp) { return Math.max(1, Math.floor((xp || 0) / 40) + 1); }
+function tierForLevel(level) { return LEVEL_TIERS.find((t) => level <= t.max); }
+function roleOf(profile) { return (profile && profile.role) || "member"; }
+function idColorFor(profile) {
+  const role = roleOf(profile);
+  if (ROLE_STYLE[role]) return ROLE_STYLE[role].color;
+  return tierForLevel(levelFromXp(profile && profile.xp)).color;
+}
+function titleFor(profile) {
+  const role = roleOf(profile);
+  if (ROLE_STYLE[role]) return ROLE_STYLE[role].label;
+  return tierForLevel(levelFromXp(profile && profile.xp)).title;
+}
+function badgeFor(profile) {
+  const role = roleOf(profile);
+  return (ROLE_STYLE[role] && ROLE_STYLE[role].badge) || "";
+}
+function tipCapFor(profile) {
+  const role = roleOf(profile);
+  return (role === "globaladmin" || role === "merchant") ? 5000 : 100;
+}
+function findUidByUsername(name) {
+  const clean = (name || "").replace(/^@/, "").trim().toLowerCase();
+  return db.ref("usernames/" + clean).once("value").then((snap) => snap.val());
+}
+function indexUsername(username, uid) {
+  return db.ref("usernames/" + username.trim().toLowerCase()).set(uid);
+}
+
+let currentUser = null;
+let currentProfile = null;
+let currentProfileRef = null;
+let profileLoaded = false;
+let currentRoomId = null;
+let currentRoomRef = null;
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById("clock").textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+function showView(id) {
+  document.querySelectorAll(".view").forEach((v) => {
+    v.style.display = "none";
+    v.classList.remove("active");
+  });
+  const el = document.getElementById(id);
+  el.style.display = (id === "view-chat") ? "flex" : "block";
+  el.classList.add("active");
+}
+
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    currentUser = user;
+    if (currentProfileRef) currentProfileRef.off();
+    currentProfileRef = db.ref("users/" + user.uid);
+    profileLoaded = false;
+    currentProfileRef.on("value", (snap) => {
+      const data = snap.val();
+      currentProfile = data;
+      if (!profileLoaded) {
+        profileLoaded = true;
+        if (!data || !data.username) {
+          renderAvatarGrid();
+          showView("view-profile");
+        } else {
+          renderRooms();
+          showView("view-rooms");
+        }
+      } else {
+        // Live refresh of CR/level/role badges without changing the current screen
+        if (document.getElementById("view-rooms").classList.contains("active")) renderUserCard();
+        if (document.getElementById("view-profile").classList.contains("active")) renderProfileStats();
+        updateRoomCrChip();
+      }
+    });
+  } else {
+    currentUser = null;
+    if (currentProfileRef) { currentProfileRef.off(); currentProfileRef = null; }
+    showView("view-auth");
+  }
+});
+
+function logout() {
+  if (guestMode) {
+    guestMode = false;
+    db = realDb;
+    currentUser = null;
+    currentProfile = null;
+    profileLoaded = false;
+    showView("view-auth");
+    return;
+  }
+  auth.signOut();
+}
+document.getElementById("logout-btn-profile").onclick = logout;
+document.getElementById("logout-btn-rooms").onclick = logout;
+
+const authError = document.getElementById("auth-error");
+const loginForm = document.getElementById("login-form");
+const signupForm = document.getElementById("signup-form");
+
+document.getElementById("show-signup").onclick = () => {
+  loginForm.style.display = "none";
+  document.getElementById("show-signup").style.display = "none";
+  signupForm.style.display = "block";
+  document.getElementById("show-login").style.display = "block";
+  authError.textContent = "";
+};
+document.getElementById("show-login").onclick = () => {
+  signupForm.style.display = "none";
+  document.getElementById("show-login").style.display = "none";
+  loginForm.style.display = "block";
+  document.getElementById("show-signup").style.display = "block";
+  authError.textContent = "";
+};
+
+document.getElementById("guest-preview-btn").onclick = () => {
+  guestMode = true;
+  db = guestDb; // from here on, every db.ref(...) call in the app is a harmless no-op
+  currentUser = { uid: "guest-preview" };
+  currentProfile = {
+    username: "GuestPreview",
+    avatar: AVATARS[0],
+    credits: 250,
+    xp: 60,
+    role: "member",
+    giftsSent: 0,
+    giftsReceived: 0
+  };
+  profileLoaded = true;
+  renderRooms();
+  showView("view-rooms");
+};
+
+loginForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const email = document.getElementById("login-email").value;
+  const password = document.getElementById("login-password").value;
+  auth.signInWithEmailAndPassword(email, password)
+    .catch((err) => authError.textContent = err.message);
+});
+
+signupForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const username = document.getElementById("signup-username").value.trim();
+  const email = document.getElementById("signup-email").value;
+  const password = document.getElementById("signup-password").value;
+
+  auth.createUserWithEmailAndPassword(email, password)
+    .then((cred) => {
+      const uid = cred.user.uid;
+      const avatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
+      return db.ref("meta/founderAssigned").once("value").then((snap) => {
+        const isFounder = !snap.val();
+        const userData = {
+          username, avatar, createdAt: Date.now(),
+          credits: 100, xp: 0, role: isFounder ? "globaladmin" : "member",
+          giftsSent: 0, giftsReceived: 0
+        };
+        const writes = [db.ref("users/" + uid).set(userData), indexUsername(username, uid)];
+        if (isFounder) writes.push(db.ref("meta/founderAssigned").set(true));
+        return Promise.all(writes);
+      });
+    })
+    .catch((err) => authError.textContent = err.message);
+});
+
+let selectedAvatar = AVATARS[0];
+
+function renderAvatarGrid() {
+  renderProfileStats();
+  const grid = document.getElementById("avatar-grid");
+  grid.innerHTML = "";
+  const existing = (currentProfile && currentProfile.avatar) || AVATARS[0];
+  selectedAvatar = existing;
+  document.getElementById("username-input").value = (currentProfile && currentProfile.username) || "";
+
+  AVATARS.forEach((a) => {
+    const div = document.createElement("div");
+    div.className = "avatar-option" + (a === existing ? " selected" : "");
+    div.textContent = AVATAR_EMOJI[a];
+    div.onclick = () => {
+      document.querySelectorAll(".avatar-option").forEach((el) => el.classList.remove("selected"));
+      div.classList.add("selected");
+      selectedAvatar = a;
+    };
+    grid.appendChild(div);
+  });
+}
+
+document.getElementById("save-profile-btn").onclick = () => {
+  const username = document.getElementById("username-input").value.trim();
+  const errEl = document.getElementById("profile-error");
+  if (!username) { errEl.textContent = "Please enter a username"; return; }
+  db.ref("users/" + currentUser.uid).update({ username, avatar: selectedAvatar })
+    .then(() => indexUsername(username, currentUser.uid))
+    .then(() => {
+      currentProfile = Object.assign({}, currentProfile, { username, avatar: selectedAvatar });
+      renderRooms();
+      showView("view-rooms");
+    })
+    .catch((err) => errEl.textContent = err.message);
+};
+
+document.getElementById("become-merchant-btn").onclick = () => {
+  if (!currentUser || !currentProfile) return;
+  const note = document.getElementById("merchant-demo-note");
+  if (!confirm("Demo: unlock the purple Merchant ID for $75? (No real payment — this is a UI test only.)")) return;
+  db.ref("users/" + currentUser.uid).update({ role: "merchant" }).then(() => {
+    currentProfile = Object.assign({}, currentProfile, { role: "merchant" });
+    renderProfileStats();
+    if (note) note.textContent = "✅ Demo unlock applied — your ID is now purple (Merchant).";
+  });
+};
+
+function renderProfileStats() {
+  const card = document.getElementById("profile-stats");
+  if (!currentProfile) { card.style.display = "none"; return; }
+  const level = levelFromXp(currentProfile.xp);
+  const color = idColorFor(currentProfile);
+  const badge = badgeFor(currentProfile);
+  const title = titleFor(currentProfile);
+  card.style.display = "block";
+  card.innerHTML =
+    '<div class="stat-row"><span class="label">ID Color</span><span><span class="id-color-dot" style="background:' + color + ';"></span>' +
+      '<b style="color:' + color + ';">' + (currentProfile.username || "") + '</b>' + (badge ? ' ' + badge : '') + '</span></div>' +
+    '<div class="stat-row"><span class="label">Level</span><span>Lv.' + level + ' — ' + title + '</span></div>' +
+    '<div class="stat-row"><span class="label">Credits</span><span class="cr-chip">💰 ' + (currentProfile.credits || 0) + ' CR</span></div>' +
+    '<div class="stat-row"><span class="label">Gifts</span><span>' + (currentProfile.giftsSent || 0) + ' sent / ' + (currentProfile.giftsReceived || 0) + ' received</span></div>';
+}
+
+function renderUserCard() {
+  if (!currentProfile) return;
+  const color = idColorFor(currentProfile);
+  const badge = badgeFor(currentProfile);
+  const level = levelFromXp(currentProfile.xp);
+  document.getElementById("user-card").innerHTML =
+    '<div class="av">' + (AVATAR_EMOJI[currentProfile.avatar] || "😎") + '</div>' +
+    '<div><div class="name" style="color:' + color + ';">' + currentProfile.username + (badge ? ' ' + badge : '') +
+      '<span class="lvl-tag">Lv.' + level + '</span></div>' +
+    '<div class="status">Online · <span class="cr-chip">💰 ' + (currentProfile.credits || 0) + '</span></div></div>' +
+    '<div class="edit-link" id="edit-profile-link">Edit</div>';
+  const editLink = document.getElementById("edit-profile-link");
+  if (editLink) editLink.onclick = () => { renderAvatarGrid(); showView("view-profile"); };
+}
+
+function renderRooms() {
+  renderUserCard();
+
+  const listEl = document.getElementById("room-list");
+  listEl.innerHTML = "";
+  ROOMS.forEach((room) => {
+    const card = document.createElement("div");
+    card.className = "room-card";
+    card.innerHTML =
+      '<div class="room-icon">' + room.icon + '</div>' +
+      '<div class="room-info"><div class="room-name">' + room.name + '</div><div class="room-desc">' + room.desc + '</div></div>' +
+      '<div class="room-meta"><div class="room-count"><span class="online-dot"></span><span id="count-' + room.id + '">...</span></div></div>';
+    card.onclick = () => openRoom(room.id, room.name);
+    listEl.appendChild(card);
+
+    db.ref("rooms/" + room.id + "/messages").once("value").then((snap) => {
+      document.getElementById("count-" + room.id).textContent = snap.numChildren() + " msgs";
+    });
+  });
+}
+
+document.getElementById("leaderboard-btn").onclick = () => {
+  showView("view-leaderboard");
+  renderLeaderboard();
+};
+document.getElementById("leaderboard-back-btn").onclick = () => showView("view-rooms");
+
+function renderLeaderboard() {
+  const el = document.getElementById("leaderboard-content");
+  el.innerHTML = '<div class="bot-hint">Loading rankings...</div>';
+  db.ref("users").once("value").then((snap) => {
+    const all = snap.val() || {};
+    const uids = Object.keys(all);
+    const list = uids.map((uid) => Object.assign({ uid }, all[uid]));
+
+    function topBlock(title, items, valKey, emoji) {
+      const sorted = items.slice().sort((a, b) => (b[valKey] || 0) - (a[valKey] || 0)).slice(0, 5);
+      const rows = sorted.map((u, i) => {
+        const color = idColorFor(u);
+        return '<div class="lb-row"><span class="lb-rank">' + (i + 1) + '</span>' +
+          '<span class="id-color-dot" style="background:' + color + ';"></span>' +
+          '<span class="lb-name" style="color:' + color + ';">' + (u.username || "?") + '</span>' +
+          '<span class="lb-val">' + emoji + ' ' + (u[valKey] || 0) + '</span></div>';
+      }).join("") || '<div class="bot-hint">Nobody yet.</div>';
+      return '<div class="leaderboard-block"><div class="section-label">' + title + '</div>' + rows + '</div>';
+    }
+
+    el.innerHTML =
+      topBlock("Top Level", list.map((u) => Object.assign({}, u, { _level: levelFromXp(u.xp) })), "_level", "⭐") +
+      topBlock("Top Credits", list, "credits", "💰") +
+      topBlock("Top Gift Senders", list, "giftsSent", "🎁") +
+      topBlock("Top Gift Receivers", list, "giftsReceived", "💝");
+  });
+}
+
+let currentGameRef = null;
+let currentGameListener = null;
+
+function openRoom(roomId, roomName) {
+  if (currentRoomRef) currentRoomRef.off();
+  if (currentGameRef && currentGameListener) currentGameRef.off("value", currentGameListener);
+  currentRoomId = roomId;
+  document.getElementById("room-title").textContent = roomName;
+  document.getElementById("messages").innerHTML = "";
+  updateRoomCrChip();
+  showView("view-chat");
+
+  currentRoomRef = db.ref("rooms/" + roomId + "/messages").limitToLast(100);
+  currentRoomRef.on("child_added", (snap) => renderMessage(snap.val()));
+
+  currentGameRef = db.ref("rooms/" + roomId + "/game");
+  currentGameListener = currentGameRef.on("value", (snap) => renderGamePanel(snap.val()));
+}
+
+function updateRoomCrChip() {
+  const chip = document.getElementById("room-cr-chip");
+  if (chip && currentProfile) chip.textContent = "💰 " + (currentProfile.credits || 0);
+}
+
+document.getElementById("back-btn").onclick = () => {
+  if (currentRoomRef) { currentRoomRef.off(); currentRoomRef = null; }
+  if (currentGameRef && currentGameListener) { currentGameRef.off("value", currentGameListener); currentGameRef = null; }
+  renderRooms();
+  showView("view-rooms");
+};
+
+document.getElementById("bot-help-btn").onclick = showHelp;
+
+function renderMessage(msg) {
+  const messagesEl = document.getElementById("messages");
+  const container = document.getElementById("messages-container");
+  const div = document.createElement("div");
+  const isBot = msg.uid === "BOT";
+  const mine = !isBot && msg.uid === currentUser.uid;
+  div.className = "msg " + (isBot ? "bot" : (mine ? "mine" : "theirs"));
+  const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const nameColor = isBot ? "" : ('style="color:' + (msg.color || "#45627e") + ';"');
+  div.innerHTML =
+    '<div class="sender" ' + nameColor + '>' + (isBot ? "🤖" : (AVATAR_EMOJI[msg.avatar] || "")) + ' ' +
+      (msg.badge ? msg.badge + ' ' : '') + (msg.username || "Anon") +
+      (!isBot && msg.level ? '<span class="lvl-tag">Lv.' + msg.level + '</span>' : '') + '</div>' +
+    '<div class="bubble">' + escapeHtml(msg.text) + '</div>' +
+    '<div class="time">' + time + '</div>';
+  messagesEl.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function escapeHtml(str) {
+  const d = document.createElement("div");
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function postBotMessage(roomId, text) {
+  db.ref("rooms/" + roomId + "/messages").push({
+    uid: "BOT",
+    username: "mig Bot",
+    avatar: null,
+    text: text,
+    timestamp: Date.now()
+  });
+}
+
+function sendMessage() {
+  const input = document.getElementById("msg-input");
+  const text = input.value.trim();
+  if (!text || !currentUser || !currentRoomId) return;
+
+  if (currentProfile && currentProfile.mutedUntil && currentProfile.mutedUntil > Date.now()) {
+    const mins = Math.ceil((currentProfile.mutedUntil - Date.now()) / 60000);
+    postBotMessage(currentRoomId, "🤐 You're muted for " + mins + " more minute(s).");
+    input.value = "";
+    return;
+  }
+
+  input.value = "";
+
+  if (text.charAt(0) === "/" || text.charAt(0) === "!") {
+    handleCommand(text);
+    return;
+  }
+
+  db.ref("rooms/" + currentRoomId + "/messages").push({
+    uid: currentUser.uid,
+    username: currentProfile.username,
+    avatar: currentProfile.avatar,
+    text: text,
+    timestamp: Date.now(),
+    color: idColorFor(currentProfile),
+    badge: badgeFor(currentProfile),
+    level: levelFromXp(currentProfile.xp)
+  });
+
+  db.ref("users/" + currentUser.uid).update({
+    credits: firebase.database.ServerValue.increment(1),
+    xp: firebase.database.ServerValue.increment(2)
+  });
+}
+
+document.getElementById("send-btn").onclick = sendMessage;
+document.getElementById("msg-input").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
+
+// ===================== BOT COMMAND ROUTER =====================
+// Mirrors the original mig33 chatroom-bot pattern:
+//   /bot <game>   -> adds a game bot to the room
+//   /bot stop     -> removes it
+//   !start !j !d !r !b <n>  -> typed the same way they were on mig33
+
+function handleCommand(raw) {
+  const trimmed = raw.trim();
+  const lower = trimmed.toLowerCase();
+  const parts = trimmed.split(/\s+/);
+
+  if (lower.indexOf("/bot") === 0) {
+    const arg = lower.replace("/bot", "").trim();
+    if (arg === "stop") { gameStop(); return; }
+    if (arg === "lowcard" || arg === "dice" || arg === "cricket") { gameAddBot(arg); return; }
+    postBotMessage(currentRoomId, "Unknown bot. Try /bot lowcard, /bot dice, or /bot cricket.");
+    return;
+  }
+
+  if (lower === "!start") { gameCmdStart(); return; }
+  if (lower === "!j") { gameCmdJoin(); return; }
+  if (lower === "!d") { gameCmdDraw(); return; }
+  if (lower === "!r") { gameCmdRoll(); return; }
+  if (lower.indexOf("!b") === 0) {
+    const num = parseInt(lower.replace("!b", "").trim(), 10);
+    gameCmdBat(num);
+    return;
+  }
+
+  if (lower === "/help") { showHelp(); return; }
+  if (lower === "/cr" || lower === "/bal") { showBalance(); return; }
+  if (lower.indexOf("/who") === 0) { cmdWho(parts[1]); return; }
+  if (lower.indexOf("/tip") === 0) { cmdTip(parts[1], parseInt(parts[2], 10)); return; }
+  if (lower.indexOf("/gift") === 0) { cmdGift(parts[1], (parts[2] || "").toLowerCase()); return; }
+  if (lower.indexOf("/promote") === 0) { cmdPromote(parts[1], (parts[2] || "").toLowerCase()); return; }
+  if (lower.indexOf("/demote") === 0) { cmdDemote(parts[1]); return; }
+  if (lower.indexOf("/mute") === 0) { cmdMute(parts[1], parseInt(parts[2], 10) || 5); return; }
+  if (lower.indexOf("/unmute") === 0) { cmdUnmute(parts[1]); return; }
+  if (lower.indexOf("/kick") === 0) { cmdMute(parts[1], 5); return; }
+
+  postBotMessage(currentRoomId, "Unknown command. Type /help to see everything you can do.");
+}
+
+function showHelp() {
+  postBotMessage(currentRoomId,
+    "📋 Commands:\n" +
+    "/bot lowcard | /bot dice | /bot cricket — add a game\n" +
+    "/bot stop — remove the current game\n" +
+    "!start !j !d !r !b <1-6> — play\n" +
+    "/cr — check your balance, level & ID color\n" +
+    "/who <@user> — look up someone's profile\n" +
+    "/tip <@user> <amount> — send CR to someone\n" +
+    "/gift <@user> <rose|star|diamond|crown> — send a gift\n" +
+    (roleOf(currentProfile) === "globaladmin" ? "/promote <@user> <merchant|mentor|roomadmin|globaladmin> — assign a role (Global Admin)\n/demote <@user> — back to Member (Global Admin)\n" : "") +
+    (roleRank(currentProfile) >= ROLE_RANK.mentor ? "/mute <@user> <minutes> / /unmute <@user> — moderate (Mentor/Room Admin/Global Admin)\n" : ""));
+}
+
+function showBalance() {
+  const level = levelFromXp(currentProfile.xp);
+  const title = titleFor(currentProfile);
+  postBotMessage(currentRoomId,
+    "💰 " + currentProfile.username + " — " + (currentProfile.credits || 0) + " CR · Lv." + level + " " + title +
+    " · ID color: " + idColorFor(currentProfile) + (badgeFor(currentProfile) ? " " + badgeFor(currentProfile) : ""));
+}
+
+function cmdWho(name) {
+  if (!name) { postBotMessage(currentRoomId, "Type /who @username"); return; }
+  findUidByUsername(name).then((uid) => {
+    if (!uid) { postBotMessage(currentRoomId, "Couldn't find " + name + "."); return; }
+    db.ref("users/" + uid).once("value").then((snap) => {
+      const u = snap.val();
+      if (!u) { postBotMessage(currentRoomId, "Couldn't find " + name + "."); return; }
+      const level = levelFromXp(u.xp);
+      postBotMessage(currentRoomId,
+        "👤 " + u.username + " — " + (u.credits || 0) + " CR · Lv." + level + " " + titleFor(u) +
+        (badgeFor(u) ? " " + badgeFor(u) : "") + " · 🎁 " + (u.giftsSent || 0) + " sent / " + (u.giftsReceived || 0) + " received");
+    });
+  });
+}
+
+function cmdTip(name, amount) {
+  if (!name || !amount || amount <= 0) { postBotMessage(currentRoomId, "Type /tip @username amount, e.g. /tip alex 10"); return; }
+  const cap = tipCapFor(currentProfile);
+  if (amount > cap) { postBotMessage(currentRoomId, "Members can tip up to " + cap + " CR at a time (Merchants/Admins up to 5000)."); return; }
+  if ((currentProfile.credits || 0) < amount) { postBotMessage(currentRoomId, "You only have " + (currentProfile.credits || 0) + " CR."); return; }
+  findUidByUsername(name).then((uid) => {
+    if (!uid) { postBotMessage(currentRoomId, "Couldn't find " + name + "."); return; }
+    if (uid === currentUser.uid) { postBotMessage(currentRoomId, "You can't tip yourself!"); return; }
+    db.ref("users/" + currentUser.uid).update({ credits: firebase.database.ServerValue.increment(-amount) });
+    db.ref("users/" + uid).update({ credits: firebase.database.ServerValue.increment(amount) });
+    postBotMessage(currentRoomId, "💸 " + currentProfile.username + " tipped " + name + " " + amount + " CR!");
+  });
+}
+
+function cmdGift(name, giftKey) {
+  const gift = GIFTS[giftKey];
+  if (!name || !gift) {
+    postBotMessage(currentRoomId, "Type /gift @username <gift>. Gifts: " +
+      Object.keys(GIFTS).map((k) => k + " " + GIFTS[k].emoji + " (" + GIFTS[k].cost + " CR)").join(", "));
+    return;
+  }
+  if ((currentProfile.credits || 0) < gift.cost) { postBotMessage(currentRoomId, "Not enough CR for a " + gift.name + " (" + gift.cost + " CR needed)."); return; }
+  findUidByUsername(name).then((uid) => {
+    if (!uid) { postBotMessage(currentRoomId, "Couldn't find " + name + "."); return; }
+    db.ref("users/" + currentUser.uid).update({
+      credits: firebase.database.ServerValue.increment(-gift.cost),
+      giftsSent: firebase.database.ServerValue.increment(1)
+    });
+    db.ref("users/" + uid).update({ giftsReceived: firebase.database.ServerValue.increment(1) });
+    postBotMessage(currentRoomId, "🎁 " + currentProfile.username + " sent " + name + " a " + gift.emoji + " " + gift.name + "!");
+  });
+}
+
+function cmdPromote(name, role) {
+  if (roleOf(currentProfile) !== "globaladmin") { postBotMessage(currentRoomId, "Only a Global Admin can promote members."); return; }
+  if (!name || ["merchant", "mentor", "roomadmin", "globaladmin"].indexOf(role) === -1) {
+    postBotMessage(currentRoomId, "Type /promote @username merchant|mentor|roomadmin|globaladmin"); return;
+  }
+  findUidByUsername(name).then((uid) => {
+    if (!uid) { postBotMessage(currentRoomId, "Couldn't find " + name + "."); return; }
+    db.ref("users/" + uid).update({ role: role }).then(() => {
+      postBotMessage(currentRoomId, "✅ " + name + " is now a " + ROLE_STYLE[role].badge + " " + ROLE_STYLE[role].label + "!");
+    });
+  });
+}
+
+function cmdDemote(name) {
+  if (roleOf(currentProfile) !== "globaladmin") { postBotMessage(currentRoomId, "Only a Global Admin can demote members."); return; }
+  if (!name) { postBotMessage(currentRoomId, "Type /demote @username"); return; }
+  findUidByUsername(name).then((uid) => {
+    if (!uid) { postBotMessage(currentRoomId, "Couldn't find " + name + "."); return; }
+    db.ref("users/" + uid).update({ role: "member" }).then(() => {
+      postBotMessage(currentRoomId, name + " is back to Member.");
+    });
+  });
+}
+
+function cmdMute(name, minutes) {
+  if (roleRank(currentProfile) < ROLE_RANK.mentor) { postBotMessage(currentRoomId, "Only a Mentor, Room Admin, or Global Admin can do that."); return; }
+  if (!name) { postBotMessage(currentRoomId, "Type /mute @username minutes"); return; }
+  const mins = Math.min(Math.max(minutes || 5, 1), 60);
+  findUidByUsername(name).then((uid) => {
+    if (!uid) { postBotMessage(currentRoomId, "Couldn't find " + name + "."); return; }
+    db.ref("users/" + uid).update({ mutedUntil: Date.now() + mins * 60000 }).then(() => {
+      postBotMessage(currentRoomId, "🤐 " + name + " has been muted for " + mins + " minute(s).");
+    });
+  });
+}
+
+function cmdUnmute(name) {
+  if (roleRank(currentProfile) < ROLE_RANK.mentor) { postBotMessage(currentRoomId, "Only a Mentor, Room Admin, or Global Admin can do that."); return; }
+  if (!name) { postBotMessage(currentRoomId, "Type /unmute @username"); return; }
+  findUidByUsername(name).then((uid) => {
+    if (!uid) { postBotMessage(currentRoomId, "Couldn't find " + name + "."); return; }
+    db.ref("users/" + uid).update({ mutedUntil: null }).then(() => {
+      postBotMessage(currentRoomId, "🔊 " + name + " can talk again.");
+    });
+  });
+}
+
+function gameRef() { return db.ref("rooms/" + currentRoomId + "/game"); }
+
+function awardGameWin(uid) {
+  if (!uid) return;
+  db.ref("users/" + uid).update({
+    credits: firebase.database.ServerValue.increment(25),
+    xp: firebase.database.ServerValue.increment(15)
+  });
+}
+
+function gameAddBot(type) {
+  gameRef().once("value").then((snap) => {
+    if (snap.val() && snap.val().type) {
+      postBotMessage(currentRoomId, "A game is already running here. Type /bot stop first.");
+      return;
+    }
+    const names = { lowcard: "LowCard", dice: "Dice", cricket: "Cricket" };
+    gameRef().set({ type: type, status: "idle", round: 0, players: {} });
+    postBotMessage(currentRoomId,
+      names[type] + " bot added to the room.\nType !start to start a game, !j to join.");
+  });
+}
+
+function gameStop() {
+  gameRef().remove();
+  postBotMessage(currentRoomId, "Game bot removed.");
+}
+
+// ===================== GAME ENGINE (LowCard / Dice / Cricket) =====================
+// All three follow the same mig33 chatroom-bot pattern:
+//   /bot <game>  -> bot joins the room and announces itself
+//   !start       -> starts a round; everyone currently in players{} plays
+//   !j           -> joins the game (must join before a round starts)
+//   !d / !r / !b -> each game's own "play" command (draw / roll / bat)
+// The bot posts every result as a chat message, same as the real thing.
+// Real mig33 had server-side join/draw timers with bot auto-play on timeout;
+// since this is a client-only Firebase app there's no server to run that timer,
+// so rounds resolve as soon as every joined player has acted.
+
+const GAME_NAMES = { lowcard: "LowCard", dice: "Dice", cricket: "Cricket" };
+
+function gameCmdStart() {
+  gameRef().once("value").then((snap) => {
+    const state = snap.val();
+    if (!state || !state.type) {
+      postBotMessage(currentRoomId, "No game bot here. Type /bot lowcard, /bot dice, or /bot cricket first.");
+      return;
+    }
+    const players = state.players || {};
+    const uids = Object.keys(players);
+    if (uids.length < 2) {
+      postBotMessage(currentRoomId, "Need at least 2 players. Type !j to join first.");
+      return;
+    }
+    if (state.status === "active" || state.status === "tiebreak") {
+      postBotMessage(currentRoomId, "A round is already in progress.");
+      return;
+    }
+
+    if (state.type === "lowcard") startLowCardRound(state);
+    else if (state.type === "dice") startDiceRound(state);
+    else if (state.type === "cricket") startCricketRound(state);
+  });
+}
+
+function gameCmdJoin() {
+  if (!currentUser || !currentProfile) return;
+  gameRef().once("value").then((snap) => {
+    const state = snap.val();
+    if (!state || !state.type) {
+      postBotMessage(currentRoomId, "No game bot here. Type /bot lowcard, /bot dice, or /bot cricket first.");
+      return;
+    }
+    if (state.status === "active" || state.status === "tiebreak") {
+      postBotMessage(currentRoomId, "Round already started — join the next one.");
+      return;
+    }
+    if (state.players && state.players[currentUser.uid]) {
+      postBotMessage(currentRoomId, currentProfile.username + " is already in.");
+      return;
+    }
+    gameRef().child("players/" + currentUser.uid).set({
+      username: currentProfile.username,
+      avatar: currentProfile.avatar,
+      status: "alive",
+      play: null,
+      score: 0
+    });
+    postBotMessage(currentRoomId, currentProfile.username + " joined the game. Type !j to join too, or !start to begin.");
+  });
+}
+
+// ---------- LOWCARD ----------
+// Everyone draws a card each round. Aces high, suit doesn't matter.
+// Lowest card drawn is eliminated. Ties redraw against each other only.
+// Last player standing wins.
+
+const LC_SUITS = [{ s: "♠", c: "black" }, { s: "♥", c: "red" }, { s: "♦", c: "red" }, { s: "♣", c: "black" }];
+const LC_RANKS = [
+  { label: "2", value: 2 }, { label: "3", value: 3 }, { label: "4", value: 4 },
+  { label: "5", value: 5 }, { label: "6", value: 6 }, { label: "7", value: 7 },
+  { label: "8", value: 8 }, { label: "9", value: 9 }, { label: "10", value: 10 },
+  { label: "J", value: 11 }, { label: "Q", value: 12 }, { label: "K", value: 13 }, { label: "A", value: 14 }
+];
+function drawCard() {
+  const suit = LC_SUITS[Math.floor(Math.random() * LC_SUITS.length)];
+  const rank = LC_RANKS[Math.floor(Math.random() * LC_RANKS.length)];
+  return { label: rank.label, value: rank.value, suit: suit.s, color: suit.c };
+}
+
+function startLowCardRound(state) {
+  const players = state.players || {};
+  const updates = {};
+  Object.keys(players).forEach((uid) => {
+    if (players[uid].status === "alive" || players[uid].status === "tied") {
+      updates["players/" + uid + "/status"] = "alive";
+      updates["players/" + uid + "/play"] = null;
+    }
+  });
+  updates["status"] = "active";
+  updates["round"] = (state.round || 0) + 1;
+  gameRef().update(updates).then(() => {
+    postBotMessage(currentRoomId, "LowCard round " + ((state.round || 0) + 1) + " started! Everyone type !d to draw.");
+  });
+}
+
+function gameCmdDraw() {
+  gameRef().once("value").then((snap) => {
+    const state = snap.val();
+    if (!state || state.type !== "lowcard" || (state.status !== "active" && state.status !== "tiebreak") || !currentUser) return;
+    const me = (state.players || {})[currentUser.uid];
+    if (!me) return;
+    if (state.status === "tiebreak" && me.status !== "tied") { postBotMessage(currentRoomId, "You're sitting this tiebreak out."); return; }
+    if (state.status === "active" && me.status !== "alive") { postBotMessage(currentRoomId, "You're not in this round."); return; }
+    if (me.play !== null) return;
+
+    const card = drawCard();
+    gameRef().child("players/" + currentUser.uid).update({ play: card.value, label: card.label, suit: card.suit, color: card.color })
+      .then(() => {
+        postBotMessage(currentRoomId, currentProfile.username + " drew " + card.label + card.suit);
+        checkLowCardRound();
+      });
+  });
+}
+
+function checkLowCardRound() {
+  gameRef().once("value").then((snap) => {
+    const state = snap.val();
+    if (!state || state.type !== "lowcard") return;
+    const players = state.players || {};
+
+    if (state.status === "tiebreak") {
+      const tied = Object.keys(players).filter((uid) => players[uid].status === "tied");
+      if (tied.length === 0 || !tied.every((uid) => players[uid].play !== null)) return;
+
+      const lowest = Math.min.apply(null, tied.map((uid) => players[uid].play));
+      const stillLowest = tied.filter((uid) => players[uid].play === lowest);
+
+      if (stillLowest.length === tied.length) {
+        // Everyone in the tiebreak tied again -- redraw once more
+        const updates = {};
+        tied.forEach((uid) => { updates["players/" + uid + "/play"] = null; });
+        gameRef().update(updates);
+        postBotMessage(currentRoomId, "Still tied — drawing again!");
+        return;
+      }
+
+      // Resolve: anyone in the tiebreak NOT at the lowest value survives back to "alive";
+      // whoever's left at the lowest is eliminated (redraw among themselves if more than one)
+      if (stillLowest.length > 1) {
+        const updates = {};
+        tied.forEach((uid) => {
+          if (stillLowest.indexOf(uid) === -1) { updates["players/" + uid + "/status"] = "alive"; }
+          else { updates["players/" + uid + "/play"] = null; }
+        });
+        gameRef().update(updates);
+        postBotMessage(currentRoomId, "Still tied for lowest between " +
+          stillLowest.map((uid) => players[uid].username).join(", ") + " — they draw again!");
+        return;
+      }
+
+      const out = stillLowest[0];
+      const updates = { players_out: true };
+      tied.forEach((uid) => {
+        updates["players/" + uid + "/status"] = (uid === out) ? "out" : "alive";
+      });
+      delete updates.players_out;
+      gameRef().update(updates).then(() => {
+        postBotMessage(currentRoomId, players[out].username + " had the lowest card and is eliminated.");
+        finishLowCardRound();
+      });
+      return;
+    }
+
+    // Normal (non-tiebreak) round
+    const inRound = Object.keys(players).filter((uid) => players[uid].status === "alive");
+    if (inRound.length === 0 || !inRound.every((uid) => players[uid].play !== null)) return;
+
+    if (inRound.length === 1) {
+      gameRef().update({ status: "finished", winnerUid: inRound[0] });
+      awardGameWin(inRound[0]);
+      postBotMessage(currentRoomId, "🏆 " + players[inRound[0]].username + " wins LowCard! (+25 CR) Type !start to play again.");
+      return;
+    }
+
+    const lowest = Math.min.apply(null, inRound.map((uid) => players[uid].play));
+    const lowestUids = inRound.filter((uid) => players[uid].play === lowest);
+
+    if (lowestUids.length > 1) {
+      const updates = { status: "tiebreak" };
+      lowestUids.forEach((uid) => { updates["players/" + uid + "/status"] = "tied"; updates["players/" + uid + "/play"] = null; });
+      gameRef().update(updates);
+      postBotMessage(currentRoomId, "Tie for lowest between " +
+        lowestUids.map((uid) => players[uid].username).join(", ") + " — they draw again!");
+      return;
+    }
+
+    gameRef().child("players/" + lowestUids[0]).update({ status: "out" });
+    postBotMessage(currentRoomId, players[lowestUids[0]].username + " had the lowest card and is eliminated.");
+    finishLowCardRound();
+  });
+}
+
+function finishLowCardRound() {
+  gameRef().once("value").then((snap) => {
+    const state = snap.val();
+    const players = state.players || {};
+    const remaining = Object.keys(players).filter((uid) => players[uid].status === "alive" || players[uid].status === "tied");
+    if (remaining.length === 1) {
+      gameRef().update({ status: "finished", winnerUid: remaining[0] });
+      awardGameWin(remaining[0]);
+      postBotMessage(currentRoomId, "🏆 " + players[remaining[0]].username + " wins LowCard! (+25 CR) Type !start to play again.");
+    } else {
+      gameRef().update({ status: "idle" });
+      postBotMessage(currentRoomId, "Type !start for the next round.");
+    }
+  });
+}
+
+// ---------- DICE ----------
+// Bot rolls 2 dice -> a target total. Each player rolls 2 dice; below target = eliminated.
+// Double 6-6 grants immunity for the round. If nobody beats the bot, round repeats.
+// Last player standing wins.
+
+function rollDie() { return Math.floor(Math.random() * 6) + 1; }
+
+function startDiceRound(state) {
+  const players = state.players || {};
+  const updates = {};
+  Object.keys(players).forEach((uid) => {
+    if (players[uid].status === "alive" || players[uid].status === "immune") {
+      updates["players/" + uid + "/status"] = players[uid].status === "immune" ? "immune" : "alive";
+      updates["players/" + uid + "/play"] = null;
+    }
+  });
+  const d1 = rollDie(), d2 = rollDie();
+  updates["status"] = "active";
+  updates["round"] = (state.round || 0) + 1;
+  updates["botDie1"] = d1; updates["botDie2"] = d2; updates["botTotal"] = d1 + d2;
+  gameRef().update(updates).then(() => {
+    postBotMessage(currentRoomId, "🎲 Dice round " + ((state.round || 0) + 1) +
+      " — bot rolled " + d1 + " + " + d2 + " = " + (d1 + d2) + ". Beat it! Type !r to roll.");
+  });
+}
+
+function gameCmdRoll() {
+  gameRef().once("value").then((snap) => {
+    const state = snap.val();
+    if (!state || state.type !== "dice" || state.status !== "active" || !currentUser) return;
+    const me = (state.players || {})[currentUser.uid];
+    if (!me || me.status === "out") { postBotMessage(currentRoomId, "You're not in this round."); return; }
+    if (me.play !== null) return;
+
+    const d1 = rollDie(), d2 = rollDie();
+    const total = d1 + d2;
+    const wasImmune = me.status === "immune";
+    let newStatus = "alive";
+    let line = currentProfile.username + " rolled " + d1 + " + " + d2 + " = " + total;
+    if (d1 === 6 && d2 === 6) { newStatus = "immune"; line += " — double sixes! Immune next round."; }
+    else if (total < state.botTotal && !wasImmune) { newStatus = "out"; line += " — OUT."; }
+    else { line += " — safe."; }
+
+    gameRef().child("players/" + currentUser.uid).update({ play: total, status: newStatus })
+      .then(() => { postBotMessage(currentRoomId, line); checkDiceRound(); });
+  });
+}
+
+function checkDiceRound() {
+  gameRef().once("value").then((snap) => {
+    const state = snap.val();
+    if (!state || state.type !== "dice" || state.status !== "active") return;
+    const players = state.players || {};
+    const uids = Object.keys(players);
+    if (uids.length === 0 || !uids.every((uid) => players[uid].play !== null)) return;
+
+    const aliveUids = uids.filter((uid) => players[uid].status !== "out");
+    if (aliveUids.length === 1) {
+      gameRef().update({ status: "finished", winnerUid: aliveUids[0] });
+      awardGameWin(aliveUids[0]);
+      postBotMessage(currentRoomId, "🏆 " + players[aliveUids[0]].username + " wins Dice! (+25 CR) Type !start to play again.");
+    } else if (aliveUids.length === 0) {
+      gameRef().update({ status: "idle" });
+      postBotMessage(currentRoomId, "Nobody beat the bot — same players, type !start to re-roll the round.");
+    } else {
+      gameRef().update({ status: "idle" });
+      postBotMessage(currentRoomId, "Type !start for the next round.");
+    }
+  });
+}
+
+// ---------- CRICKET ----------
+// Hand-cricket style: every round all players "bat" a number 1-6 at once.
+// If your number matches the bot's number, you're out with 0 added that round.
+// Otherwise your number is added to your running score.
+// After 6 rounds, highest total score wins. A tie plays one extra round (sudden death)
+// between the tied players until someone is ahead.
+
+function startCricketRound(state) {
+  const players = state.players || {};
+  const updates = {};
+  Object.keys(players).forEach((uid) => {
+    if (players[uid].status === "alive" || players[uid].status === "tied") {
+      updates["players/" + uid + "/status"] = "alive";
+      updates["players/" + uid + "/play"] = null;
+    }
+  });
+  const bot = Math.floor(Math.random() * 6) + 1;
+  const isTiebreak = (state.status === "tiebreak_pending");
+  updates["status"] = "active";
+  updates["round"] = (state.round || 0) + 1;
+  updates["botPick"] = bot;
+  gameRef().update(updates).then(() => {
+    postBotMessage(currentRoomId,
+      "🏏 Cricket " + (isTiebreak ? "tiebreak round" : "round " + ((state.round || 0) + 1) + " of 6") +
+      " — everyone type !b <1-6> to bat. Match the bot's secret number and you're out!");
+  });
+}
+
+function gameCmdBat(num) {
+  if (!num || num < 1 || num > 6 || isNaN(num)) {
+    postBotMessage(currentRoomId, "Type !b followed by a number 1-6, e.g. !b 4");
+    return;
+  }
+  gameRef().once("value").then((snap) => {
+    const state = snap.val();
+    if (!state || state.type !== "cricket" || state.status !== "active" || !currentUser) return;
+    const me = (state.players || {})[currentUser.uid];
+    if (!me || me.status === "out") { postBotMessage(currentRoomId, "You're not in this match."); return; }
+    if (me.play !== null) return;
+
+    gameRef().child("players/" + currentUser.uid).update({ play: num })
+      .then(checkCricketRound);
+  });
+}
+
+function checkCricketRound() {
+  gameRef().once("value").then((snap) => {
+    const state = snap.val();
+    if (!state || state.type !== "cricket" || state.status !== "active") return;
+    const players = state.players || {};
+    const inRound = Object.keys(players).filter((uid) => players[uid].status === "alive");
+    if (inRound.length === 0 || !inRound.every((uid) => players[uid].play !== null)) return;
+
+    const bot = state.botPick;
+    const updates = { status: "idle" };
+    let lines = ["Bot batted " + bot + "."];
+    inRound.forEach((uid) => {
+      const p = players[uid];
+      if (p.play === bot) {
+        updates["players/" + uid + "/status"] = "out";
+        lines.push(p.username + " matched the bot (" + p.play + ") — OUT for this match.");
+      } else {
+        updates["players/" + uid + "/score"] = (p.score || 0) + p.play;
+        lines.push(p.username + " scored " + p.play + " (total " + ((p.score || 0) + p.play) + ")");
+      }
+    });
+
+    gameRef().update(updates).then(() => {
+      postBotMessage(currentRoomId, lines.join("\n"));
+
+      gameRef().once("value").then((snap2) => {
+        const s2 = snap2.val();
+        const allPlayers = s2.players || {};
+        const roundsDone = s2.round || 0;
+        const aliveUids = Object.keys(allPlayers).filter((uid) => allPlayers[uid].status === "alive");
+        const inContention = (roundsDone > 6) ? aliveUids : Object.keys(allPlayers);
+        const anyoneStillIn = aliveUids.length > 0;
+
+        if (roundsDone >= 6 || !anyoneStillIn) {
+          // Match over: highest total score among contenders wins (getting matched by the bot
+          // just stops your scoring for the rest of the match, it doesn't end it for everyone else)
+          const top = Math.max.apply(null, inContention.map((uid) => allPlayers[uid].score || 0));
+          const topUids = inContention.filter((uid) => (allPlayers[uid].score || 0) === top);
+
+          if (topUids.length === 1) {
+            gameRef().update({ status: "finished", winnerUid: topUids[0] });
+            awardGameWin(topUids[0]);
+            postBotMessage(currentRoomId, "🏆 " + allPlayers[topUids[0]].username +
+              " wins Cricket with " + top + " runs! (+25 CR) Type !start to play again.");
+          } else {
+            // Tie at the top -- sudden death extra round between tied players only
+            const updates2 = { status: "tiebreak_pending" };
+            Object.keys(allPlayers).forEach((uid) => {
+              updates2["players/" + uid + "/status"] = (topUids.indexOf(uid) !== -1) ? "alive" : "out";
+            });
+            gameRef().update(updates2);
+            postBotMessage(currentRoomId, "Tied at " + top + " runs between " +
+              topUids.map((uid) => allPlayers[uid].username).join(", ") +
+              " — extra round! Type !start to continue.");
+          }
+        } else {
+          postBotMessage(currentRoomId, "Type !start for the next round.");
+        }
+      });
+    });
+  });
+}
+
+// ---------- IN-ROOM GAME PANEL ----------
+function renderGamePanel(state) {
+  const panel = document.getElementById("game-panel");
+  if (!state || !state.type) { panel.style.display = "none"; panel.innerHTML = ""; return; }
+
+  panel.style.display = "block";
+  const players = state.players || {};
+  const uids = Object.keys(players);
+  const name = GAME_NAMES[state.type];
+
+  let statusLine = "Waiting for !start";
+  if (state.status === "active" || state.status === "tiebreak") statusLine = "Round " + (state.round || 1) + " in progress";
+  else if (state.status === "finished") statusLine = "Game over";
+
+  let centerHtml = "";
+  if (state.type === "dice" && state.botTotal) {
+    centerHtml = '<span class="gp-chip">Bot: ' + state.botDie1 + ' + ' + state.botDie2 + ' = ' + state.botTotal + '</span>';
+  } else if (state.type === "cricket" && state.status === "active") {
+    centerHtml = '<span class="gp-chip">Bot is batting...</span>';
+  }
+
+  let chipsHtml = uids.map((uid) => {
+    const p = players[uid];
+    const isMe = currentUser && uid === currentUser.uid;
+    let label = p.username;
+    if (state.type === "lowcard" && p.play !== null && p.play !== undefined) label += " " + p.label + p.suit;
+    if (state.type === "dice" && p.play !== null && p.play !== undefined) label += " (" + p.play + ")";
+    if (state.type === "cricket") label += " — " + (p.score || 0) + " runs";
+    const cls = "gp-chip" + (p.status === "out" ? " out" : "") + (p.status === "tied" ? " me" : "") + (isMe ? " me" : "");
+    if (p.status === "tied") label += " (tiebreak)";
+    return '<span class="' + cls + '">' + label + '</span>';
+  }).join("");
+
+  panel.innerHTML =
+    '<div class="game-panel-title">' + name + ' bot — ' + statusLine + '</div>' +
+    '<div class="game-panel-row">' + centerHtml + chipsHtml + '</div>' +
+    '<div class="gp-cmds">' +
+      (state.type === "lowcard" ? '<b>!d</b> draw' : state.type === "dice" ? '<b>!r</b> roll' : '<b>!b 1-6</b> bat') +
+      ' &nbsp; <b>!j</b> join &nbsp; <b>!start</b> next round &nbsp; <b>/bot stop</b> end' +
+    '</div>';
+}
+
+</script>
+</body>
+</html>
