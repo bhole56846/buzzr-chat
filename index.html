@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>mig33 Ultimate</title>
+<style>
+/* --- mig33 LEGACY J2ME UI SPEC --- */
+* { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+body { font-family: Tahoma, Geneva, Verdana, sans-serif; background: #000; height: 100vh; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+.app { width: 100%; height: 100dvh; max-width: 430px; margin: 0 auto; background: #f4f4f4; display: flex; flex-direction: column; position: relative; }
+
+/* Multi-Tabstrip */
+.tabstrip { display: flex; background: #2a72a8; border-bottom: 2px solid #15466e; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
+.tabstrip::-webkit-scrollbar { display: none; }
+.tab-icon { width: 44px; height: 40px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #15466e; cursor: pointer; color: #fff; font-size: 18px; flex-shrink: 0; position: relative; }
+.tab-icon.active { background: #eef4f8; color: #15466e; }
+.tab-icon.unread::after { content: ''; position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; background: #f5d51c; border-radius: 50%; border: 1px solid #000; animation: flash 1s infinite; }
+@keyframes flash { 50% { opacity: 0; } }
+
+/* Orange Presence/Status Bar */
+.topbar { background: linear-gradient(to bottom, #f0a13a, #d4730a); padding: 8px 10px; display: flex; align-items: center; gap: 8px; color: #fff; border-bottom: 1px solid #8a4f06; flex-shrink: 0; }
+.presence-dot { width: 11px; height: 11px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.3); background: #4ec73f; box-shadow: inset 0 1px 2px rgba(255,255,255,0.5); }
+.who { flex: 1; overflow: hidden; line-height: 1.2; }
+.who b { font-size: 14px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 1px rgba(0,0,0,0.3); }
+.who small { font-size: 10px; opacity: 0.95; font-weight: bold; }
+.cr-chip { background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); }
+
+/* Content & List Rows */
+.content { flex: 1; overflow-y: auto; background: #fff; display: flex; flex-direction: column; }
+.section-strip { background: #d4d4d4; padding: 5px 10px; font-size: 11px; font-weight: bold; color: #1c2733; border-bottom: 1px solid #bbb; text-transform: uppercase; }
+.list-row { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px dashed #ccc; cursor: pointer; transition: background 0.1s; }
+.list-row:active { background: #eaf2fa; }
+
+/* Chat Elements */
+.chat-msgs { flex: 1; overflow-y: auto; background: #fff; }
+.msg { padding: 6px 10px; border-bottom: 1px dashed #eee; font-size: 13px; line-height: 1.4; word-wrap: break-word; }
+.msg.bot { background: #f0f4f7; color: #1c3a55; border-left: 4px solid #2a72a8; font-family: monospace; }
+.msg.gift-shower { background: #fff0f5; color: #d6336c; font-weight: bold; border-left: 4px solid #d6336c; }
+.msg.pm { background: #fffde6; border-left: 4px solid #f0a13a; }
+.sender { font-weight: bold; margin-right: 5px; }
+.av-head { width: 22px; height: 22px; vertical-align: middle; border: 1px solid #ccc; margin-right: 5px; image-rendering: pixelated; }
+
+/* Interaction UI */
+.input-bar { display: flex; padding: 8px; background: #d8dadb; border-top: 1px solid #bbb; gap: 5px; align-items: center; }
+.input-bar input { flex: 1; padding: 8px; border: 1px solid #999; border-radius: 2px; font-size: 14px; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
+.input-bar button { padding: 8px 15px; background: linear-gradient(to bottom, #ffd87a, #d97f10); border: 1px solid #7a4f0a; font-weight: bold; border-radius: 3px; cursor: pointer; text-shadow: 0 1px 0 rgba(255,255,255,0.4); }
+
+/* Grid Selectors (Avatar/Emoji) */
+.grid-modal { position: absolute; bottom: 60px; left: 10px; right: 10px; background: #fff; border: 2px solid #2a72a8; padding: 10px; display: none; grid-template-columns: repeat(5, 1fr); gap: 10px; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.5); max-height: 300px; overflow-y: auto; }
+.grid-item { text-align: center; cursor: pointer; padding: 5px; border: 1px solid #eee; }
+.grid-item:hover { background: #eaf2fa; border-color: #2a72a8; }
+.grid-item img { width: 32px; height: 32px; image-rendering: pixelated; }
+
+#game-bar { background: #1c3a55; color: #ffcf6e; padding: 6px; font-size: 11px; text-align: center; font-family: monospace; border-top: 1px solid #000; display: none; }
+#level-up-toast { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); background: #1c3a55; color: #ffcf6e; padding: 20px; border: 3px solid #ffcf6e; border-radius: 10px; z-index: 999; display: none; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+
+.view { display: none; flex-direction: column; height: 100%; }
+.active-view { display: flex; }
+</style>
+</head>
+<body>
+
+<div class="app">
+    <!-- Popups -->
+    <div id="level-up-toast"><h2>MIG LEVEL UP!</h2><p id="lvl-txt"></p></div>
+    <div id="avatar-modal" class="grid-modal"></div>
+    <div id="emoji-modal" class="grid-modal" style="grid-template-columns: repeat(7, 1fr);"></div>
+
+    <!-- Auth -->
+    <div id="view-auth" class="view active-view">
+        <div style="background:#2a72a8; padding:60px 20px; text-align:center; color:#fff;">
+            <h1 style="font-style:italic; font-size:50px; letter-spacing:-3px; text-shadow:0 2px 4px #000;">mig<span style="color:#f0a13a">33</span></h1>
+            <p style="font-size:11px; opacity:0.8; font-weight:bold;">COMMUNITY · GAMES · CHAT</p>
+        </div>
+        <div style="padding:20px; background:#d8dadb; flex:1;">
+            <input type="email" id="auth-email" placeholder="Email Address" style="width:100%; padding:14px; margin-bottom:10px; border:1px solid #999;">
+            <input type="password" id="auth-pass" placeholder="Password" style="width:100%; padding:14px; margin-bottom:15px; border:1px solid #999;">
+            <button onclick="login()" style="width:100%; padding:14px; font-size:16px;">Login</button>
+            <div style="text-align:center; margin:25px 0; font-size:12px; color:#666; font-weight:bold;">--- OR CREATE NEW ID ---</div>
+            <input type="text" id="reg-user" placeholder="Username" style="width:100%; padding:14px; margin-bottom:10px; border:1px solid #999;">
+            <button onclick="register()" style="width:100%; padding:14px; background:#2a72a8; color:#fff; border-color:#15466e; font-size:16px;">Register Account</button>
+            <p style="font-size:10px; color:#444; margin-top:15px; text-align:center; line-height:1.4;">Advanced Security: Gmail Dot-trick blocked. Multi-accounts restricted.</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="view-main" class="view">
+        <div class="tabstrip">
+            <div class="tab-icon active" onclick="showSec('friends')">👥</div>
+            <div class="tab-icon" onclick="showSec('rooms')">💬</div>
+            <div class="tab-icon" onclick="toggleAvatarModal()">👤</div>
+            <div id="dynamic-tabs" style="display:flex;"></div>
+        </div>
+        <div class="topbar">
+            <div class="presence-dot"></div>
+            <div class="who" id="my-info"></div>
+            <div class="cr-chip" id="my-cr">💰 0</div>
+        </div>
+        
+        <div id="sec-friends" class="sec content">
+            <div class="section-strip">Online (Click to PM)</div>
+            <div id="friends-list" style="flex:1;"></div>
+        </div>
+
+        <div id="sec-rooms" class="sec content" style="display:none;">
+            <div class="section-strip">Global Rooms</div>
+            <div id="official-rooms" style="flex:1;"></div>
+        </div>
+
+        <div id="sec-chat" class="sec" style="display:none; flex:1; flex-direction:column;">
+            <div id="chat-msgs" class="chat-msgs"></div>
+            <div id="game-bar"></div>
+            <div class="input-bar">
+                <span style="font-size:22px; cursor:pointer;" onclick="toggleEmojiModal()">😊</span>
+                <input type="text" id="chat-input" placeholder="Message or !b 1-6...">
+                <button onclick="sendMsg()">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// --- CORE CONFIG ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBL4fxOpQcu0otOtCzhq95X-uULIHrTP20",
+  authDomain: "buzzr-987ea.firebaseapp.com",
+  databaseURL: "https://buzzr-987ea-default-rtdb.firebaseio.com",
+  projectId: "buzzr-987ea",
+  storageBucket: "buzzr-987ea.firebasestorage.app",
+  messagingSenderId: "557198372950",
+  appId: "1:557198372950:web:ab3415c2fe09cbf7d34bf7"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+// --- DATA & ASSETS ---
+const MIG_HEADS = Array.from({length: 20}, (_, i) => `https://api.dicebear.com/7.x/pixel-art/svg?seed=mig${i+50}&size=64&backgroundColor=b6e3f4`);
+const EMOJIS = ["😀","😁","😂","😅","😉","😊","😋","😎","😍","😘","😗","😙","😚","🙂","🤗","🤩","🤔","🤨","😐","😑","😶","🙄","😏","😣","😥","😮","🤐","😯","😪","😫","😴","😌","😛","😜","😝","🤤","😒","😓","😔","😕","🙃","🤑","😲","☹️","🙁","😖","😞","😟","😤","😢","😭","😦","😧","😨","😩","🤯","😬","😰","😱","🥵","🥶","😳","🤪","😵","😡","😠","🤬","😷","🤒","🤕","🤢","🤮","🤧","😇","🥳","🥺","🧐"];
+const TEMP_MAIL_PROVIDERS = ["yopmail.com", "mailinator.com", "tempmail.com", "sharklasers.com", "guerrillamail.com", "10minutemail.com"];
+const ROLES = {
+    member: { rank: 0, color: '#1a52a8', label: 'Member' },
+    submerchant: { rank: 1, color: '#e75fb3', label: 'Sub-Merchant' },
+    merchant: { rank: 1, color: '#9b59b6', label: 'Merchant' },
+    redmerchant: { rank: 1, color: '#e32636', label: 'Red Merchant' },
+    mentor: { rank: 2, color: '#e63946', label: 'Mentor' },
+    globaladmin: { rank: 4, color: '#e8820c', label: 'Admin' },
+    owner: { rank: 5, color: '#e8820c', label: 'Owner' }
+};
+
+let me = null;
+let curTab = null;
+let openTabs = {};
+let lastKnownLvl = 1;
+
+// --- MODERN SECURITY UTILS ---
+
+function normalizeEmail(email) {
+    let [user, domain] = email.toLowerCase().trim().split('@');
+    if (domain === 'gmail.com') {
+        user = user.split('+')[0].replace(/\./g, ''); // Blocks Dot Trick
+    }
+    return user + '@' + domain;
+}
+
+function getFingerprint() {
+    let id = localStorage.getItem('mig_secure_id');
+    if (!id) {
+        id = 'dev_' + Math.random().toString(36).substr(2, 10);
+        localStorage.setItem('mig_secure_id', id);
+    }
+    return id;
+}
+
+// --- AUTH & ACCOUNT SYSTEMS ---
+
+function login() {
+    const email = normalizeEmail(document.getElementById('auth-email').value);
+    auth.signInWithEmailAndPassword(email, document.getElementById('auth-pass').value).catch(e => alert(e.message));
+}
+
+function register() {
+    const user = document.getElementById('reg-user').value.trim();
+    const emailRaw = document.getElementById('auth-email').value.trim();
+    const pass = document.getElementById('auth-pass').value;
+
+    if (!user || !emailRaw || pass.length < 6) return alert("Please provide valid details (Password 6+ chars).");
+
+    const domain = emailRaw.split('@')[1];
+    if (TEMP_MAIL_PROVIDERS.includes(domain)) return alert("Security: Temp-mails are strictly blocked.");
+
+    const email = normalizeEmail(emailRaw);
+    const fp = getFingerprint();
+
+    // Limit device multi-accounts
+    db.ref('fingerprints/' + fp).once('value', s => {
+        if ((s.val() || 0) >= 2) return alert("Security: Maximum 2 accounts per device allowed.");
+
+        auth.createUserWithEmailAndPassword(email, pass).then(res => {
+            db.ref('users').once('value', uSnap => {
+                const isOwner = !uSnap.exists();
+                const role = isOwner ? 'owner' : 'member';
+                const credits = isOwner ? 200000 : 500;
+
+                db.ref('users/' + res.user.uid).set({
+                    username: user, credits, xp: 0, role, av: 0, email, fp, createdAt: Date.now()
+                });
+                db.ref('usernames/' + user.toLowerCase()).set(res.user.uid);
+                db.ref('fingerprints/' + fp).set((s.val() || 0) + 1);
+
+                if (isOwner) alert("You are the first user. Owner privileges activated!");
+            });
+        }).catch(e => alert("Registration failed. Email address may be in use by another ID."));
+    });
+}
+
+auth.onAuthStateChanged(user => {
+    if (user) {
+        db.ref('users/' + user.uid).on('value', snap => {
+            me = snap.val(); me.uid = user.uid;
+            updateUI();
+        });
+        showSec('friends');
+        document.getElementById('view-auth').classList.remove('active-view');
+        document.getElementById('view-main').classList.add('active-view');
+        loadOfficialRooms();
+        refreshFriends();
+    } else {
+        document.getElementById('view-main').classList.remove('active-view');
+        document.getElementById('view-auth').classList.add('active-view');
+    }
+});
+
+function updateUI() {
+    const lvl = Math.floor(me.xp / 100) + 1;
+    if (lvl > lastKnownLvl) { triggerLevelUp(lvl); lastKnownLvl = lvl; }
+    document.getElementById('my-info').innerHTML = `<b style="color:${ROLES[me.role].color}">${me.username}</b><br><small>Level ${lvl} ${ROLES[me.role].label}</small>`;
+    document.getElementById('my-cr').innerText = "💰 " + (me.credits || 0).toLocaleString();
+}
+
+function triggerLevelUp(l) {
+    const t = document.getElementById('level-up-toast');
+    document.getElementById('lvl-txt').innerText = "migLevel " + l + " achieved!";
+    t.style.display = "block"; setTimeout(() => t.style.display = "none", 4500);
+}
+
+// --- CRICKET & GAME SYSTEMS (Ball-by-Ball Loop) ---
+
+function autoStartGame(rid) {
+    const waitId = Date.now();
+    db.ref(`rooms/${rid}/game`).update({ waitStartedAt: waitId });
+    setTimeout(() => {
+        db.ref(`rooms/${rid}/game`).once('value', s => {
+            const g = s.val();
+            if (g?.waitStartedAt === waitId && Object.keys(g.players || {}).length >= 2) {
+                const startTime = Date.now();
+                db.ref(`rooms/${rid}/game`).update({ 
+                    status: 'active', 
+                    waitStartedAt: null, 
+                    roundTime: startTime,
+                    botBowl: Math.floor(Math.random() * 6) + 1 
+                });
+                postBotMsg(rid, "🏏 THE BALL IS BOWLED! Bat now: !b 1-6 (20s)");
+                setTimeout(() => resolveCricket(rid, startTime), 20000);
+            }
+        });
+    }, 10000); // 10s wait between rounds
+}
+
+function resolveCricket(rid, time) {
+    db.ref(`rooms/${rid}/game`).once('value', snap => {
+        const g = snap.val();
+        if (!g || g.roundTime !== time) return;
+        
+        const players = g.players || {};
+        const bowl = g.botBowl;
+        let logs = [`[Bot bowled a ${bowl}]`];
+
+        Object.keys(players).forEach(uid => {
+            const p = players[uid];
+            if (p.status === 'batting') {
+                const bat = p.move || Math.floor(Math.random() * 6) + 1; // Auto-play slacker
+                if (bat === bowl) {
+                    db.ref(`rooms/${rid}/game/players/${uid}/status`).set('out');
+                    logs.push(`🛑 ${p.username} OUT! Score: ${p.score || 0}`);
+                } else {
+                    const newScore = (p.score || 0) + bat;
+                    db.ref(`rooms/${rid}/game/players/${uid}`).update({ score: newScore, move: null });
+                    logs.push(`🏏 ${p.username} scored ${bat}! (Total: ${newScore})`);
+                }
+            }
+        });
+
+        postBotMsg(rid, logs.join(" | "));
+        
+        db.ref(`rooms/${rid}/game/players`).once('value', ps => {
+            const data = ps.val() || {};
+            const alive = Object.values(data).filter(p => p.status === 'batting');
+            if (alive.length === 0) {
+                const results = Object.values(data).sort((a,b) => b.score - a.score);
+                if (results[0]) {
+                    postBotMsg(rid, `🏆 MATCH OVER! Winner: ${results[0].username} with ${results[0].score} runs!`);
+                    // Find winner UID and reward
+                    const winUid = Object.keys(data).find(k => data[k].username === results[0].username);
+                    db.ref(`users/${winUid}/credits`).set(firebase.database.ServerValue.increment(100));
+                }
+                db.ref(`rooms/${rid}/game`).set({ status: 'idle', players: null });
+            } else {
+                db.ref(`rooms/${rid}/game`).update({ status: 'idle' });
+            }
+        });
+    });
+}
+
+// --- CHAT & TAB NAVIGATION ---
+
+function openChat(id, name, type) {
+    if (!openTabs[id]) {
+        openTabs[id] = { id, name, type };
+        const path = type === 'room' ? `rooms/${id}/messages` : `pms/${id}/messages`;
+        db.ref(path).limitToLast(1).on('child_added', snap => {
+            if (curTab?.id !== id) openTabs[id].unread = true;
+            renderMsg(id, snap.val());
+            updateTabStrip();
+        });
+
+        if (type === 'room' && (id.includes('game') || id === 'newbies')) {
+            db.ref(`rooms/${id}/game`).on('value', snap => {
+                const g = snap.val();
+                if (curTab?.id === id) renderGameUI(g);
+                if (g?.status === 'idle' && Object.keys(g.players || {}).length >= 2 && !g.waitStartedAt) autoStartGame(id);
+            });
+        }
+    }
+    curTab = openTabs[id];
+    curTab.unread = false;
+    showSec('chat');
+    updateTabStrip();
+    loadHistory(id);
+}
+
+function sendMsg() {
+    const inp = document.getElementById('chat-input');
+    const val = inp.value.trim(); if (!val || !curTab) return;
+    inp.value = "";
+
+    // Commands
+    if (val.startsWith('/')) return handleCmd(val);
+    if (val === "!j") return db.ref(`rooms/${curTab.id}/game/players/${me.uid}`).set({ username: me.username, status: 'batting', score: 0 });
+    if (val.startsWith("!b")) {
+        const m = parseInt(val.split(" ")[1]);
+        if (m >= 1 && m <= 6) return db.ref(`rooms/${curTab.id}/game/players/${me.uid}/move`).set(m);
+    }
+
+    const path = curTab.type === 'room' ? `rooms/${curTab.id}/messages` : `pms/${curTab.id}/messages`;
+    db.ref(path).push({
+        uid: me.uid, username: me.username, text: val, av: me.av, color: ROLES[me.role].color, timestamp: Date.now()
+    });
+    // XP & Credits for chat
+    db.ref('users/' + me.uid).update({ 
+        xp: firebase.database.ServerValue.increment(2),
+        credits: firebase.database.ServerValue.increment(1)
+    });
+}
+
+function renderMsg(tid, msg) {
+    if (curTab?.id !== tid) return;
+    const cont = document.getElementById('chat-msgs');
+    const div = document.createElement('div');
+    div.className = "msg " + (msg.type || "");
+    const av = msg.uid !== 'BOT' ? `<img src="${MIG_HEADS[msg.av || 0]}" class="av-head">` : "";
+    div.innerHTML = `${av}<span class="sender" style="color:${msg.color || '#1a52a8'}">${msg.username}:</span> ${escapeHtml(msg.text)}`;
+    cont.appendChild(div);
+    cont.scrollTop = cont.scrollHeight;
+}
+
+function updateTabStrip() {
+    let h = "";
+    Object.keys(openTabs).forEach(id => {
+        const t = openTabs[id];
+        const active = curTab?.id === id ? 'active' : '';
+        const unread = t.unread ? 'unread' : '';
+        h += `<div class="tab-icon ${active} ${unread}" onclick="openChat('${t.id}','${t.name}','${t.type}')">${t.type === 'pm' ? '👤' : '💬'}</div>`;
+    });
+    document.getElementById('dynamic-tabs').innerHTML = h;
+}
+
+// --- COMMANDS ---
+function handleCmd(raw) {
+    const parts = raw.split(" ");
+    const cmd = parts[0].toLowerCase();
+    const target = (parts[1] || "").replace('@','');
+
+    if (cmd === "/addcr" && ROLES[me.role].rank >= 5) {
+        db.ref('usernames/'+target.toLowerCase()).once('value', s => {
+            if(s.val()) db.ref('users/'+s.val()+'/credits').set(firebase.database.ServerValue.increment(parseInt(parts[2])));
+        });
+    }
+    if (cmd === "/promote" && ROLES[me.role].rank >= 4) {
+        db.ref('usernames/'+target.toLowerCase()).once('value', s => {
+            if(s.val()) db.ref('users/'+s.val()+'/role').set(parts[2]);
+        });
+    }
+    if (cmd === "/who") {
+        db.ref('usernames/'+target.toLowerCase()).once('value', s => {
+            const uid = s.val();
+            if(!uid) return localBot("User not found.");
+            db.ref('users/'+uid).once('value', us => {
+                const u = us.val();
+                const canSeeCr = (ROLES[me.role].rank >= 4 || uid === me.uid);
+                localBot(`[PROFILE] ${u.username} | Level: ${Math.floor(u.xp/100)+1} ${ROLES[u.role].label} ${canSeeCr ? "| CR: "+u.credits.toLocaleString() : ""}`);
+            });
+        });
+    }
+}
+
+// --- ECONOMY (VOUCHERS) ---
+function dropVoucher() {
+    if (Math.random() > 0.5) { // 50% chance every check
+        const code = Math.floor(1000 + Math.random() * 8999);
+        const cr = Math.floor(Math.random() * 50) + 10;
+        const msgRef = db.ref('rooms/newbies/messages').push({ uid:'BOT', username:'mig Bot', text:`🎟️ VOUCHER DROP: Type /redeem ${code} for ${cr} CR! (Vanishes in 20s)`, type:'bot' });
+        db.ref('rooms/newbies/voucher').set({ code, cr });
+        
+        setTimeout(() => {
+            msgRef.remove();
+            db.ref('rooms/newbies/voucher').remove();
+        }, 20000);
+    }
+}
+setInterval(dropVoucher, 180000); // Check every 3 mins
+
+function redeemVoucher(c) {
+    db.ref('rooms/newbies/voucher').once('value', s => {
+        const v = s.val();
+        if (v && v.code == c) {
+            db.ref('users/' + me.uid + '/credits').set(firebase.database.ServerValue.increment(v.cr));
+            db.ref('rooms/newbies/voucher').remove();
+            postBotMsg('newbies', `🎉 ${me.username} redeemed the voucher for ${v.cr} Credits!`);
+        }
+    });
+}
+
+// --- UI HELPERS ---
+function toggleAvatarModal() {
+    const m = document.getElementById('avatar-modal');
+    m.innerHTML = MIG_HEADS.map((u, i) => `<div class="grid-item" onclick="setAv(${i})"><img src="${u}"></div>`).join('');
+    m.style.display = m.style.display === 'grid' ? 'none' : 'grid';
+}
+function setAv(i) { db.ref('users/'+me.uid+'/av').set(i); document.getElementById('avatar-modal').style.display = 'none'; }
+function toggleEmojiModal() {
+    const m = document.getElementById('emoji-modal');
+    m.innerHTML = EMOJIS.map(e => `<div class="grid-item" onclick="appEmoji('${e}')">${e}</div>`).join('');
+    m.style.display = m.style.display === 'grid' ? 'none' : 'grid';
+}
+function appEmoji(e) { document.getElementById('chat-input').value += e; document.getElementById('emoji-modal').style.display = 'none'; }
+
+function showSec(s) {
+    document.querySelectorAll('.sec').forEach(el => el.style.display = 'none');
+    document.getElementById('sec-' + s).style.display = s === 'chat' ? 'flex' : 'block';
+}
+function loadOfficialRooms() {
+    const rs = [{id:'newbies', n:'Newbies Room'}, {id:'game-cricket', n:'Cricket Arena'}, {id:'game-dice', n:'Dice Arena'}];
+    document.getElementById('official-rooms').innerHTML = rs.map(r => `<div class="list-row" onclick="openChat('${r.id}','${r.n}','room')"><b>${r.n}</b></div>`).join('');
+}
+function refreshFriends() {
+    db.ref('users').limitToFirst(100).once('value', snap => {
+        let h = "";
+        snap.forEach(u => {
+            if(u.key !== me.uid) h += `<div class="list-row" onclick="openChat('${u.key}','${u.val().username}','pm')"><img src="${MIG_HEADS[u.val().av || 0]}" class="av-head"><b>${u.val().username}</b></div>`;
+        });
+        document.getElementById('friends-list').innerHTML = h;
+    });
+}
+function loadHistory(id) {
+    document.getElementById('chat-msgs').innerHTML = "";
+    const path = openTabs[id].type === 'room' ? `rooms/${id}/messages` : `pms/${id}/messages`;
+    db.ref(path).limitToLast(25).once('value', snap => snap.forEach(m => renderMsg(id, m.val())));
+}
+function renderGameUI(g) {
+    const bar = document.getElementById('game-bar');
+    if(!g) return bar.style.display='none';
+    bar.style.display = 'block';
+    bar.innerText = `[${g.status === 'idle' ? 'WAITING' : 'BALLING'}] Players: ${Object.keys(g.players||{}).length}`;
+}
+function postBotMsg(rid, t) { db.ref(`rooms/${rid}/messages`).push({ uid:'BOT', username:'mig Bot', text:t, type:'bot' }); }
+function localBot(t) { renderMsg(curTab.id, { uid:'BOT', username:'System', text:t, type:'bot' }); }
+function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+</script>
+</body>
+</html>
