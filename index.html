@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CircleHub - The Legacy Returns</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #f37021; --bg: #f2f4f7; --white: #fff;
+            --purple: #9b59b6; --pink: #e75fb3; --red: #e32636; --admin: #e8820c;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; outline: none; }
+        body { background: #000; height: 100vh; overflow: hidden; }
+        .app-shell { width: 100%; max-width: 500px; margin: 0 auto; height: 100dvh; background: var(--bg); display: flex; flex-direction: column; position: relative; }
+
+        /* Role Colors & Identity */
+        .role-owner, .role-globaladmin { color: var(--admin) !important; font-weight: 900; }
+        .role-redmerchant { color: var(--red) !important; font-weight: 800; }
+        .role-merchant { color: var(--purple) !important; font-weight: 800; }
+        .role-submerchant { color: var(--pink) !important; font-weight: 800; }
+        .tag { font-size: 9px; padding: 1px 5px; border-radius: 3px; color: white !important; margin-left: 4px; vertical-align: middle; }
+        .tag-m { background: var(--purple); } .tag-sm { background: var(--pink); } .tag-rm { background: var(--red); } .tag-a { background: #555; }
+
+        /* Header & Top Stats */
+        .header { background: linear-gradient(135deg, var(--primary), #d45d1a); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; color: white; }
+        .header h1 { font-size: 22px; font-weight: 900; font-style: italic; letter-spacing: -1px; }
+        .eco-info { text-align: right; line-height: 1.2; }
+        .eco-info b { font-size: 13px; display: block; }
+        .eco-info small { font-size: 9px; opacity: 0.9; }
+
+        /* Views */
+        .view { display: none; flex: 1; overflow-y: auto; padding-bottom: 80px; }
+        .view.active { display: block; }
+        .view.flex-view.active { display: flex; flex-direction: column; height: 100%; padding-bottom: 0; }
+
+        /* UI Elements */
+        .section-label { padding: 15px 15px 5px; font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; }
+        .list-card { background: white; margin: 10px 15px; border-radius: 12px; overflow: hidden; border: 1px solid #eee; }
+        .list-item { padding: 15px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f5f5f5; cursor: pointer; }
+        .list-item:active { background: #f9f9f9; }
+
+        /* Chat System */
+        .msg-list { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; background: #fff; }
+        .bubble { max-width: 85%; padding: 10px 14px; border-radius: 15px; font-size: 13.5px; line-height: 1.4; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .bubble.sent { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 2px; }
+        .bubble.received { align-self: flex-start; background: #f0f2f5; border-bottom-left-radius: 2px; }
+        .bubble small { display: block; font-size: 10px; font-weight: 800; margin-bottom: 3px; }
+        
+        .bot-strip { background: #1c3a55; color: #ffcf6e; padding: 6px; font-size: 10px; text-align: center; font-family: monospace; font-weight: bold; }
+
+        /* Navigation */
+        .nav-bar { position: absolute; bottom: 0; width: 100%; height: 70px; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; align-items: center; z-index: 100; }
+        .nav-link { text-align: center; color: #888; font-size: 10px; font-weight: 700; cursor: pointer; }
+        .nav-link.active { color: var(--primary); }
+        .nav-link span { display: block; font-size: 20px; margin-bottom: 3px; }
+
+        /* Admin/Merchant Dashboard */
+        .dash-card { background: white; margin: 15px; padding: 20px; border-radius: 15px; border: 1px solid #ddd; }
+        .dash-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 10px; }
+        .dash-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; color: white; font-weight: 800; cursor: pointer; margin-bottom: 5px; }
+
+        /* Input Area */
+        .input-area { padding: 10px 15px; background: white; border-top: 1px solid #eee; display: flex; gap: 8px; align-items: center; }
+        .input-area input { flex: 1; border: none; background: #f0f2f5; padding: 12px 15px; border-radius: 25px; font-size: 14px; }
+        .btn-send { background: var(--primary); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-weight: 900; }
+
+        #auth-screen { position: absolute; inset: 0; background: white; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="app-shell">
+        <!-- Header -->
+        <header class="header" id="main-header" style="display:none;">
+            <h1>CircleHub</h1>
+            <div class="eco-info">
+                <b>💰 <span id="user-cr">0</span></b>
+                <small>रु <span id="user-npr">0.00</span> | $<span id="user-usd">0.00</span></small>
+            </div>
+        </header>
+
+        <!-- View: Feeds/Home -->
+        <div id="view-home" class="view active">
+            <div style="background: white; padding: 25px; text-align: center; border-radius: 0 0 20px 20px;">
+                <div style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary); margin: 0 auto 10px; overflow: hidden;">
+                    <img id="my-av" src="" style="width:100%;">
+                </div>
+                <h2 id="my-name">User</h2>
+                <div style="background: #fdf2e9; color: var(--primary); display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; margin-top: 5px;">
+                    MIG LEVEL <span id="my-lvl">1</span>
+                </div>
+            </div>
+            
+            <div class="section-label">Official Global Rooms</div>
+            <div class="list-card">
+                <div class="list-item" onclick="joinChat('welcome_zone', 'Welcome Zone 🤝')">
+                    <div style="font-size: 20px;">🤝</div>
+                    <div style="flex:1"><b>Welcome Zone</b><br><small>All new members start here</small></div>
+                </div>
+                <div class="list-item" onclick="joinChat('vibe_market', 'Vibe Market 🛍️')">
+                    <div style="font-size: 20px;">🛍️</div>
+                    <div style="flex:1"><b>Vibe Market</b><br><small>Trade Vouchers & Credits</small></div>
+                </div>
+                <div class="list-item" onclick="joinChat('game_central', 'Game Central 🏟️')">
+                    <div style="font-size: 20px;">🏟️</div>
+                    <div style="flex:1"><b>Game Central</b><br><small>Cricket, Dice & LowCard Arena</small></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View: Chat Window -->
+        <div id="view-chat" class="view flex-view">
+            <div style="background: white; padding: 12px 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px;">
+                <span onclick="changeView('home')" style="cursor:pointer; font-weight: 900;">←</span>
+                <b id="active-title">Room</b>
+            </div>
+            <div id="game-strip" class="bot-strip" style="display:none;"></div>
+            <div class="msg-list" id="chat-msgs"></div>
+            <div class="input-area">
+                <input type="text" id="m-input" placeholder="Type message or !command...">
+                <button class="btn-send" onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+
+        <!-- View: Admin Panel (Owner Only) -->
+        <div id="view-admin" class="view">
+            <div class="section-label">Owner Control Center 👑</div>
+            <div class="dash-card">
+                <input type="text" id="target-user" class="dash-input" placeholder="Username (no @)">
+                <input type="number" id="cr-amount" class="dash-input" placeholder="CR Amount">
+                <button class="dash-btn" style="background: var(--admin);" onclick="adminAction('credits')">Add Credits</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px;">
+                    <button class="dash-btn" style="background: var(--red);" onclick="adminAction('redmerchant')">Set Red M</button>
+                    <button class="dash-btn" style="background: var(--purple);" onclick="adminAction('merchant')">Set Merchant</button>
+                    <button class="dash-btn" style="background: var(--pink);" onclick="adminAction('submerchant')">Set Sub M</button>
+                    <button class="dash-btn" style="background: #888;" onclick="adminAction('member')">Reset User</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="nav-bar" id="app-nav" style="display:none;">
+            <div class="nav-link active" onclick="changeView('home', this)"><span>🏠</span>Home</div>
+            <div class="nav-link" id="admin-nav" style="display:none;" onclick="changeView('admin', this)"><span>👑</span>Admin</div>
+            <div class="nav-link" onclick="logout()"><span>⚙️</span>Logout</div>
+        </nav>
+
+        <!-- Auth Screen -->
+        <div id="auth-screen">
+            <h1 style="font-size: 55px; font-weight: 900; color: var(--primary); font-style: italic; letter-spacing: -3px;">Circle<span>Hub</span></h1>
+            <p style="color: #888; font-weight: 700; margin-bottom: 30px;">Classic J2ME Soul · Modern Tech</p>
+            <input type="email" id="auth-email" style="width:100%; padding:15px; border-radius:12px; border:1px solid #ddd; margin-bottom:10px;" placeholder="Email">
+            <input type="password" id="auth-pass" style="width:100%; padding:15px; border-radius:12px; border:1px solid #ddd; margin-bottom:20px;" placeholder="Password">
+            <button onclick="handleAuth('login')" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: 900;">LOGIN</button>
+            <p onclick="handleAuth('signup')" style="margin-top: 25px; color: var(--primary); font-weight: 800; cursor: pointer;">Register mig33 ID</p>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <script>
+        // --- FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBL4fxOpQcu0otOtCzhq95X-uULIHrTP20",
+            authDomain: "buzzr-987ea.firebaseapp.com",
+            databaseURL: "https://buzzr-987ea-default-rtdb.firebaseio.com",
+            projectId: "buzzr-987ea",
+            storageBucket: "buzzr-987ea.firebasestorage.app",
+            messagingSenderId: "557198372950",
+            appId: "1:557198372950:web:ab3415c2fe09cbf7d34bf7"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let me = null;
+        let activeRoom = null;
+        const NPR_RATE = 151.39;
+        const CR_RATE = 1000;
+
+        // --- AUTH & SECURITY ---
+        function handleAuth(type) {
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-pass').value;
+            if (type === 'login') {
+                auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message));
+            } else {
+                auth.createUserWithEmailAndPassword(email, pass).then(res => {
+                    db.ref('users').once('value', s => {
+                        const isOwner = !s.exists();
+                        db.ref('users/' + res.user.uid).set({
+                            username: email.split('@')[0], credits: isOwner ? 200000 : 500,
+                            xp: 0, role: isOwner ? 'owner' : 'member', av: Math.floor(Math.random() * 500)
+                        });
+                        db.ref('usernames/' + email.split('@')[0].toLowerCase()).set(res.user.uid);
+                    });
+                }).catch(e => alert(e.message));
+            }
+        }
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('main-header').style.display = 'flex';
+                document.getElementById('app-nav').style.display = 'flex';
+                db.ref('users/' + user.uid).on('value', snap => {
+                    me = snap.val(); me.uid = user.uid;
+                    updateUI();
+                    checkMerchantExpiry();
+                });
+                startVoucherLoop();
+            } else {
+                document.getElementById('auth-screen').style.display = 'flex';
+            }
+        });
+
+        // --- LEVLLING SYSTEM (MIG HARD CURVE) ---
+        function getMigLevel(xp) {
+            // mig33 had a very slow growth. Using quadratic scaling.
+            return Math.floor(Math.sqrt(xp / 50)) + 1;
+        }
+
+        function updateUI() {
+            if (!me) return;
+            const usd = me.credits / CR_RATE;
+            document.getElementById('user-cr').innerText = Math.floor(me.credits).toLocaleString();
+            document.getElementById('user-usd').innerText = usd.toFixed(2);
+            document.getElementById('user-npr').innerText = (usd * NPR_RATE).toFixed(2);
+            document.getElementById('my-name').innerText = me.username;
+            document.getElementById('my-lvl').innerText = getMigLevel(me.xp);
+            document.getElementById('my-av').src = `https://api.dicebear.com/7.x/pixel-art/svg?seed=${me.av}&backgroundColor=b6e3f4`;
+            if (me.role === 'owner') document.getElementById('admin-nav').style.display = 'block';
+        }
+
+        // --- MERCHANT AUTO-EXPIRY ---
+        function checkMerchantExpiry() {
+            if (me.role !== 'member' && me.merchantExpiry && Date.now() > me.merchantExpiry) {
+                db.ref('users/' + me.uid).update({ role: 'member', merchantExpiry: null });
+                alert("Your Merchant Color has expired! Complete tasks to renew.");
+            }
+        }
+
+        // --- CHAT & GAME ENGINES ---
+        function joinChat(id, title) {
+            activeRoom = id;
+            document.getElementById('active-title').innerText = title;
+            changeView('chat');
+            db.ref(`messages/${id}`).limitToLast(40).on('value', snap => {
+                const area = document.getElementById('chat-msgs');
+                area.innerHTML = "";
+                snap.forEach(m => {
+                    const d = m.val();
+                    const isMe = d.uid === me.uid;
+                    const tag = d.role === 'owner' ? '<span class="tag tag-a">A</span>' : (d.role === 'merchant' ? '<span class="tag tag-m">M</span>' : '');
+                    area.innerHTML += `
+                        <div class="bubble ${isMe ? 'sent' : 'received'}">
+                            <small class="role-${d.role}">${d.name} [${getMigLevel(d.xp || 0)}]${tag}</small>
+                            ${d.text}
+                        </div>`;
+                });
+                area.scrollTop = area.scrollHeight;
+            });
+
+            // GAME Arena Sync
+            if (id === 'game_central') {
+                db.ref('games/active').on('value', s => {
+                    const g = s.val();
+                    const strip = document.getElementById('game-strip');
+                    if (g) {
+                        strip.style.display = 'block';
+                        strip.innerText = `${g.type.toUpperCase()}: ${g.status} | Players: ${Object.keys(g.players||{}).length}`;
+                        if (g.status === 'idle' && Object.keys(g.players||{}).length >= 2 && !g.lock) triggerGameLoop(g.type);
+                    } else strip.style.display = 'none';
+                });
+            }
+        }
+
+        function triggerGameLoop(type) {
+            db.ref('games/active/lock').set(true);
+            setTimeout(() => {
+                db.ref('games/active/players').once('value', s => {
+                    const players = s.val() || {};
+                    let logs = [];
+                    
+                    if (type === 'cricket') {
+                        const bowl = Math.floor(Math.random() * 6) + 1;
+                        logs.push(`Umpire: Ball is ${bowl}`);
+                        Object.keys(players).forEach(uid => {
+                            const p = players[uid];
+                            if (p.status === 'batting') {
+                                const bat = p.move || Math.floor(Math.random() * 6) + 1;
+                                if (bat === bowl) {
+                                    db.ref(`games/active/players/${uid}/status`).set('out');
+                                    logs.push(`${p.name} OUT (${p.score})`);
+                                } else {
+                                    db.ref(`games/active/players/${uid}`).update({ score: p.score + bat, move: null });
+                                }
+                            }
+                        });
+                    } else if (type === 'lowcard') {
+                        let smallest = 100, loser = null;
+                        Object.keys(players).forEach(uid => {
+                            const card = Math.floor(Math.random() * 13) + 2;
+                            if (card < smallest) { smallest = card; loser = uid; }
+                        });
+                        db.ref(`games/active/players/${loser}/status`).set('out');
+                        logs.push(`${players[loser].name} had Lowest Card and is OUT!`);
+                    }
+
+                    db.ref('messages/game_central').push({ uid: 'BOT', text: logs.join(" | ") });
+                    
+                    db.ref('games/active/players').once('value', n => {
+                        const alive = Object.values(n.val()).filter(x => x.status !== 'out');
+                        if (alive.length <= 1) {
+                            db.ref('games/active').set({ status: 'idle', players: null, lock: false, type: type });
+                            db.ref('messages/game_central').push({ uid: 'BOT', text: "Match Over! Arena Cleared." });
+                        } else { db.ref('games/active/lock').set(false); }
+                    });
+                });
+            }, 10000);
+        }
+
+        function sendMessage() {
+            const inp = document.getElementById('m-input');
+            const t = inp.value.trim(); if (!t || !activeRoom) return;
+            inp.value = "";
+
+            if (t === "!j") {
+                return db.ref(`games/active/players/${me.uid}`).set({ name: me.username, status: 'batting', score: 0 });
+            }
+            if (t === "/lowcard" || t === "/cricket" || t === "/dice") {
+                return db.ref('games/active').set({ type: t.substring(1), status: 'idle', players: null });
+            }
+
+            db.ref(`messages/${activeRoom}`).push({ uid: me.uid, name: me.username, text: t, role: me.role, xp: me.xp, time: Date.now() });
+            db.ref('users/' + me.uid + '/xp').set(firebase.database.ServerValue.increment(0.1)); // Slow mig level
+        }
+
+        // --- VOUCHER SYSTEM ---
+        function startVoucherLoop() {
+            setInterval(() => {
+                ['welcome_zone', 'vibe_market', 'game_central'].forEach(rid => {
+                    if (Math.random() > 0.8) {
+                        const code = Math.floor(1000 + Math.random() * 8999);
+                        const ref = db.ref(`messages/${rid}`).push({ uid: 'BOT', text: `🎟️ Voucher: /redeem ${code} (20s)`, role:'bot' });
+                        setTimeout(() => ref.remove(), 20000);
+                    }
+                });
+            }, 120000);
+        }
+
+        // --- ADMIN PANEL ---
+        function adminAction(type) {
+            const user = document.getElementById('target-user').value.toLowerCase();
+            const val = document.getElementById('cr-amount').value;
+            db.ref('usernames/' + user).once('value', s => {
+                const uid = s.val();
+                if (!uid) return alert("User not found");
+                if (type === 'credits') db.ref(`users/${uid}/credits`).set(firebase.database.ServerValue.increment(parseInt(val)));
+                else db.ref(`users/${uid}`).update({ role: type, merchantExpiry: Date.now() + (30 * 24 * 60 * 60 * 1000) });
+                alert("Action Successful");
+            });
+        }
+
+        function changeView(vid, el) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + vid).classList.add('active');
+            if (el) {
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                el.classList.add('active');
+            }
+        }
+
+        function logout() { auth.signOut().then(() => location.reload()); }
+    </script>
+</body>
+</html>
