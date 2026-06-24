@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>mig33 Clone</title>
+<style>
+/* मोबाइलको लागि सिम्पल र सफा डिजाइन */
+* { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+body { font-family: Tahoma, sans-serif; background: #c0c8d0; height: 100vh; display: flex; align-items: center; justify-content: center; }
+.login-box { width: 90%; max-width: 380px; background: #f4f4f4; border: 1px solid #000; box-shadow: 10px 10px 0px #505860; display: flex; flex-direction: column; }
+.header { background: #2a72a8; padding: 25px; text-align: center; color: #fff; border-bottom: 2px solid #15466e; }
+.header h1 { font-style: italic; font-size: 45px; letter-spacing: -2px; }
+.header h1 span { color: #f0a13a; }
+.form-area { padding: 20px; }
+input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #999; font-size: 16px; }
+button { width: 100%; padding: 12px; background: #ccc; border: 1px solid #666; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
+.reg-btn { background: #2a72a8 !important; color: #fff !important; border-color: #15466e !important; }
+.footer-text { text-align: center; font-size: 12px; color: #666; margin: 10px 0; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="login-box" id="auth-screen">
+    <div class="header">
+        <h1>mig<span>33</span></h1>
+        <p>The Ultimate J2ME Clone</p>
+    </div>
+    <div class="form-area">
+        <input type="email" id="email" placeholder="Email Address">
+        <input type="password" id="pass" placeholder="Password">
+        <button onclick="loginUser()">Login</button>
+        
+        <div class="footer-text">-- NEW ACCOUNT --</div>
+        
+        <input type="text" id="user" placeholder="Username">
+        <button class="reg-btn" onclick="registerUser()">Register Secure ID</button>
+    </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// !!! यहाँ आफ्नो FIREBASE CONFIG हाल्नुहोस् !!!
+const firebaseConfig = {
+  apiKey: "तपाइँको_API_KEY",
+  authDomain: "तपाइँको_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://तपाइँको_PROJECT_ID.firebaseio.com",
+  projectId: "तपाइँको_PROJECT_ID",
+  storageBucket: "तपाइँको_PROJECT_ID.appspot.com",
+  messagingSenderId: "तपाइँको_ID",
+  appId: "तपाइँको_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+// लगइन गर्ने फङ्सन
+function loginUser() {
+    const e = document.getElementById('email').value.trim();
+    const p = document.getElementById('pass').value;
+    
+    if(!e || !p) return alert("Email र Password खाली नछोड्नुहोस्");
+
+    auth.signInWithEmailAndPassword(e, p)
+    .then(() => {
+        alert("लगइन सफल भयो!");
+        window.location.reload(); // पेज रिफ्रेस भएपछि च्याट स्क्रिन आउँछ
+    })
+    .catch(err => {
+        // के कारणले अड्कियो यहाँ म्यासेज आउँछ
+        alert("Error: " + err.message);
+    });
+}
+
+// नयाँ एकाउन्ट बनाउने फङ्सन
+function registerUser() {
+    const u = document.getElementById('user').value.trim();
+    const e = document.getElementById('email').value.trim();
+    const p = document.getElementById('pass').value;
+
+    if(!u || !e || !p) return alert("सबै कोठाहरू भर्नुहोस्");
+
+    auth.createUserWithEmailAndPassword(e, p)
+    .then(res => {
+        db.ref('users/' + res.user.uid).set({
+            username: u,
+            credits: 500,
+            xp: 0,
+            role: 'member'
+        });
+        db.ref('usernames/' + u.toLowerCase()).set(res.user.uid);
+        alert("एकाउन्ट बन्यो! अब लगइन गर्नुहोस्।");
+    })
+    .catch(err => {
+        alert("Registration Error: " + err.message);
+    });
+}
+
+// यदि लगइन छ भने म्यासेज देखाउने (च्याट स्क्रिन यहाँबाट खुल्छ)
+auth.onAuthStateChanged(user => {
+    if (user) {
+        document.body.innerHTML = "<h1 style='padding:50px; text-align:center;'>लगइन हुनुभयो! <br> अब च्याट लोड हुँदैछ...</h1>";
+        // यहाँ तपाइँको अघिल्लो च्याट कोड हाल्न सकिन्छ
+        setTimeout(() => {
+            // च्याट स्क्रिन खोल्ने कोड
+        }, 2000);
+    }
+});
+</script>
+</body>
+</html>
