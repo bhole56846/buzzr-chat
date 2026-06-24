@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>mig33 Ultimate</title>
+<style>
+/* --- ORIGINAL mig33 J2ME STYLING --- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Tahoma, Geneva, Verdana, sans-serif; background: #000; height: 100vh; overflow: hidden; }
+.app { width: 100%; height: 100dvh; max-width: 430px; margin: 0 auto; background: #f4f4f4; display: flex; flex-direction: column; position: relative; }
+
+/* Tabstrip */
+.tabstrip { display: flex; background: #2a72a8; border-bottom: 2px solid #15466e; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
+.tabstrip::-webkit-scrollbar { display: none; }
+.tabstrip .tab-icon { width: 42px; height: 38px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #15466e; cursor: pointer; color: #fff; font-size: 18px; flex-shrink: 0; }
+.tabstrip .tab-icon.active { background: #eef4f8; color: #15466e; }
+
+/* Top Bar (Orange) */
+.topbar { background: linear-gradient(to bottom, #f0a13a, #d4730a); padding: 8px 10px; display: flex; align-items: center; gap: 8px; color: #fff; border-bottom: 1px solid #8a4f06; }
+.presence-dot { width: 11px; height: 11px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.3); background: #4ec73f; }
+.who { flex: 1; overflow: hidden; line-height: 1.2; }
+.who b { font-size: 14px; display: block; white-space: nowrap; }
+.who small { font-size: 10px; opacity: 0.9; }
+.cr-chip { background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+
+/* Content Areas */
+.content { flex: 1; overflow-y: auto; background: #fff; }
+.section-strip { background: #d4d4d4; padding: 5px 10px; font-size: 12px; font-weight: bold; border-bottom: 1px solid #bbb; }
+.list-row { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px dashed #ccc; cursor: pointer; }
+.list-row:hover { background: #eaf2fa; }
+
+/* Chat Bubbles */
+.msg { padding: 6px 10px; border-bottom: 1px dashed #eee; font-size: 13px; line-height: 1.4; }
+.msg.bot { background: #f0f4f7; color: #1c3a55; }
+.msg.gift-shower { background: #fff0f5; color: #d6336c; font-weight: bold; border-left: 3px solid #d6336c; }
+.msg.pm { background: #fffde6; border-left: 3px solid #f0a13a; }
+.sender { font-weight: bold; margin-right: 4px; }
+.av-img { width: 24px; height: 24px; vertical-align: middle; background: #eee; border-radius: 2px; margin-right: 4px; }
+
+/* Bottom Bar */
+.input-bar { display: flex; padding: 6px; background: #d8dadb; border-top: 1px solid #bbb; gap: 4px; align-items: center; }
+.input-bar input { flex: 1; padding: 8px; border: 1px solid #999; border-radius: 2px; font-size: 14px; outline: none; }
+.input-bar button { padding: 8px 12px; background: linear-gradient(to bottom, #ffd87a, #d97f10); border: 1px solid #7a4f0a; font-weight: bold; border-radius: 3px; cursor: pointer; }
+
+/* Modal Grid */
+.grid-modal { position: absolute; bottom: 55px; left: 10px; right: 10px; background: #fff; border: 2px solid #2a72a8; padding: 10px; display: none; grid-template-columns: repeat(4, 1fr); gap: 8px; z-index: 100; box-shadow: 0 0 15px rgba(0,0,0,0.4); }
+.grid-item { text-align: center; cursor: pointer; padding: 5px; border: 1px solid #eee; }
+.grid-item:hover { background: #eaf2fa; }
+.grid-item img { width: 40px; height: 40px; }
+
+#level-up-toast { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); background: #1c3a55; color: #ffcf6e; padding: 20px; border: 3px solid #ffcf6e; border-radius: 10px; z-index: 999; display: none; text-align: center; }
+
+.view { display: none; flex-direction: column; height: 100%; }
+.active-view { display: flex; }
+</style>
+</head>
+<body>
+
+<div class="app">
+    <div id="level-up-toast"><h2>LEVEL UP!</h2><p id="lvl-txt"></p></div>
+
+    <!-- AVATAR MODAL -->
+    <div id="avatar-modal" class="grid-modal"></div>
+
+    <!-- EMOJI MODAL -->
+    <div id="emoji-modal" class="grid-modal" style="grid-template-columns: repeat(6, 1fr);"></div>
+
+    <!-- AUTH VIEW -->
+    <div id="view-auth" class="view active-view">
+        <div style="background:#2a72a8; padding:50px 20px; text-align:center; color:#fff;">
+            <h1 style="font-style:italic; font-size:45px; letter-spacing:-2px;">mig<span style="color:#f0a13a">33</span></h1>
+            <p style="font-size:12px; opacity:0.8;">The Ultimate Retro Chat</p>
+        </div>
+        <div style="padding:20px; background:#d8dadb; flex:1;">
+            <input type="text" id="auth-email" placeholder="Email Address" style="width:100%; padding:12px; margin-bottom:8px; border:1px solid #999;">
+            <input type="password" id="auth-pass" placeholder="Password" style="width:100%; padding:12px; margin-bottom:12px; border:1px solid #999;">
+            <button onclick="login()" style="width:100%; padding:12px; margin-bottom:20px;">Login</button>
+            <div style="text-align:center; margin-bottom:20px; font-size:12px; color:#666;">--- OR ---</div>
+            <input type="text" id="reg-user" placeholder="Choose Username" style="width:100%; padding:12px; margin-bottom:8px; border:1px solid #999;">
+            <button onclick="register()" style="width:100%; padding:12px; background:#2a72a8; color:#fff; border-color:#15466e;">Register New Account</button>
+        </div>
+    </div>
+
+    <!-- MAIN VIEW -->
+    <div id="view-main" class="view">
+        <div class="tabstrip">
+            <div class="tab-icon active" onclick="showSec('friends')">👥</div>
+            <div class="tab-icon" onclick="showSec('rooms')">💬</div>
+            <div class="tab-icon" onclick="toggleAvatarModal()">👤</div>
+            <div id="dynamic-tabs" style="display:flex;"></div>
+        </div>
+        <div class="topbar">
+            <div class="presence-dot"></div>
+            <div class="who" id="my-info"></div>
+            <div class="cr-chip" id="my-cr">💰 0</div>
+        </div>
+        
+        <!-- Friends List -->
+        <div id="sec-friends" class="sec content">
+            <div class="section-strip">Friends Online (Click to PM)</div>
+            <div id="friends-list"></div>
+        </div>
+
+        <!-- Room List -->
+        <div id="sec-rooms" class="sec content" style="display:none;">
+            <div class="section-strip">Official Chat Rooms</div>
+            <div id="official-rooms"></div>
+        </div>
+
+        <!-- Chat / PM / Room Panel -->
+        <div id="sec-chat" class="sec" style="display:none; flex:1; flex-direction:column;">
+            <div id="chat-msgs" style="flex:1; overflow-y:auto; background:#fff;"></div>
+            <div id="game-info" style="display:none; background:#1c3a55; color:#ffcf6e; padding:5px; font-size:11px; text-align:center;"></div>
+            <div class="input-bar">
+                <span style="font-size:20px; cursor:pointer;" onclick="toggleEmojiModal()">😊</span>
+                <input type="text" id="chat-input" placeholder="Enter message...">
+                <button onclick="sendMsg()">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// --- CONFIG ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBL4fxOpQcu0otOtCzhq95X-uULIHrTP20",
+  authDomain: "buzzr-987ea.firebaseapp.com",
+  databaseURL: "https://buzzr-987ea-default-rtdb.firebaseio.com",
+  projectId: "buzzr-987ea",
+  storageBucket: "buzzr-987ea.firebasestorage.app",
+  messagingSenderId: "557198372950",
+  appId: "1:557198372950:web:ab3415c2fe09cbf7d34bf7"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+// --- CONSTANTS ---
+// Retro Avatar Set (16 Original-style heads)
+const AVATAR_URLS = Array.from({length: 16}, (_, i) => `https://api.dicebear.com/7.x/pixel-art/svg?seed=${i+20}&size=64`);
+
+const EMOJIS = ["😀","😁","😂","😅","😉","😊","😋","😎","😍","😘","😗","😙","😚","🙂","🤗","🤩","🤔","🤨","😐","😑","😶","🙄","😏","😣","😥","😮","🤐","😯","😪","😫","😴","😌","😛","😜","😝","🤤","😒","😓","😔","😕","🙃","🤑","😲"];
+const GIFTS = {
+    rose: { name: "Rose", cost: 10, icon: "🌹" },
+    star: { name: "Star", cost: 50, icon: "⭐" },
+    diamond: { name: "Diamond", cost: 200, icon: "💎" },
+    crown: { name: "Crown", cost: 1000, icon: "👑" }
+};
+const ROLES = {
+    member: { rank: 0, color: '#1a52a8', label: 'Member' },
+    submerchant: { rank: 1, color: '#e75fb3', label: 'Sub-Merchant' },
+    merchant: { rank: 1, color: '#9b59b6', label: 'Merchant' },
+    redmerchant: { rank: 1, color: '#e32636', label: 'Red Merchant' },
+    mentor: { rank: 2, color: '#e63946', label: 'Mentor' },
+    globaladmin: { rank: 4, color: '#e8820c', label: 'Admin' },
+    owner: { rank: 5, color: '#e8820c', label: 'Owner' }
+};
+
+let me = null;
+let curTab = null;
+let openTabs = {};
+let lastLvl = 1;
+
+// --- AUTH & OWNER LOGIC ---
+function login() { auth.signInWithEmailAndPassword(document.getElementById('auth-email').value, document.getElementById('auth-pass').value).catch(e => alert(e.message)); }
+
+function register() {
+    const u = document.getElementById('reg-user').value.trim();
+    if(!u) return alert("Enter username");
+    auth.createUserWithEmailAndPassword(document.getElementById('auth-email').value, document.getElementById('auth-pass').value)
+    .then(res => {
+        db.ref('users').once('value', snap => {
+            const isFirst = !snap.exists(); // If no users exist, this is the OWNER
+            const role = isFirst ? 'owner' : 'member';
+            const credits = isFirst ? 50000 : 500;
+            
+            const userData = { username: u, credits, xp: 0, role, av: 0, status: 'Online' };
+            db.ref('users/' + res.user.uid).set(userData);
+            db.ref('usernames/' + u.toLowerCase()).set(res.user.uid);
+            
+            if(isFirst) alert("You are the first user! You have been granted OWNER status.");
+        });
+    }).catch(e => alert(e.message));
+}
+
+auth.onAuthStateChanged(user => {
+    if (user) {
+        db.ref('users/' + user.uid).on('value', snap => {
+            me = snap.val(); me.uid = user.uid;
+            updateProfileUI();
+        });
+        showSec('friends');
+        document.getElementById('view-auth').classList.remove('active-view');
+        document.getElementById('view-main').classList.add('active-view');
+        loadOfficialRooms();
+        refreshFriends();
+    } else {
+        document.getElementById('view-main').classList.remove('active-view');
+        document.getElementById('view-auth').classList.add('active-view');
+    }
+});
+
+function updateProfileUI() {
+    const lvl = Math.floor(me.xp / 100) + 1;
+    if(lvl > lastLvl) { triggerLevelUp(lvl); lastLvl = lvl; }
+    
+    document.getElementById('my-info').innerHTML = `
+        <b style="color:${ROLES[me.role].color}">${me.username}</b>
+        <br><small>Level ${lvl} ${ROLES[me.role].label}</small>`;
+    document.getElementById('my-cr').innerText = "💰 " + me.credits;
+}
+
+function triggerLevelUp(l) {
+    const t = document.getElementById('level-up-toast');
+    document.getElementById('lvl-txt').innerText = "You reached Level " + l;
+    t.style.display = "block"; setTimeout(() => t.style.display="none", 4000);
+}
+
+// --- AVATARS & MODALS ---
+function toggleAvatarModal() {
+    const m = document.getElementById('avatar-modal');
+    m.innerHTML = AVATAR_URLS.map((url, i) => `<div class="grid-item" onclick="changeAvatar(${i})"><img src="${url}"></div>`).join('');
+    m.style.display = m.style.display === 'grid' ? 'none' : 'grid';
+}
+function changeAvatar(i) {
+    db.ref('users/'+me.uid+'/av').set(i);
+    document.getElementById('avatar-modal').style.display = 'none';
+}
+function toggleEmojiModal() {
+    const m = document.getElementById('emoji-modal');
+    m.innerHTML = EMOJIS.map(e => `<div class="grid-item" onclick="appendEmoji('${e}')">${e}</div>`).join('');
+    m.style.display = m.style.display === 'grid' ? 'none' : 'grid';
+}
+function appendEmoji(e) {
+    document.getElementById('chat-input').value += e;
+    document.getElementById('emoji-modal').style.display = 'none';
+}
+
+// --- COMMANDS (Owner & Admin) ---
+function handleCmd(raw) {
+    const parts = raw.split(" ");
+    const cmd = parts[0].toLowerCase();
+    const target = (parts[1] || "").replace('@','');
+
+    if (cmd === "/cr") localBot(`Balance: ${me.credits} Credits`);
+    
+    if (cmd === "/who") {
+        db.ref('usernames/'+target.toLowerCase()).once('value', s => {
+            const uid = s.val();
+            if(!uid) return localBot("User not found.");
+            db.ref('users/'+uid).once('value', us => {
+                const u = us.val();
+                const canSeeCr = (ROLES[me.role].rank >= 4 || uid === me.uid);
+                localBot(`[PROFILE] ${u.username} | Level: ${Math.floor(u.xp/100)+1} ${ROLES[u.role].label} ${canSeeCr ? "| CR: "+u.credits : ""}`);
+            });
+        });
+    }
+
+    if (cmd === "/promote" && ROLES[me.role].rank >= 4) {
+        const role = parts[2]?.toLowerCase();
+        if(!ROLES[role]) return localBot("Roles: mentor, globaladmin, merchant, submerchant, redmerchant");
+        db.ref('usernames/'+target.toLowerCase()).once('value', s => {
+            if(s.val()) {
+                db.ref('users/'+s.val()).update({ role: role });
+                globalBot(`👑 ${target} has been promoted to ${role.toUpperCase()} by ${me.username}`);
+            }
+        });
+    }
+
+    if (cmd === "/makem" && ROLES[me.role].rank >= 4) {
+        const colors = { purple: 'merchant', pink: 'submerchant', red: 'redmerchant' };
+        const role = colors[parts[2]?.toLowerCase()];
+        if(!role) return localBot("Usage: /makem @user purple|pink|red");
+        db.ref('usernames/'+target.toLowerCase()).once('value', s => {
+            if(s.val()) db.ref('users/'+s.val()).update({ role: role });
+            globalBot(`🛍️ ${target} is now a Merchant (${parts[2]})`);
+        });
+    }
+
+    if (cmd === "/addcr" && ROLES[me.role].rank >= 5) {
+        const amt = parseInt(parts[2]);
+        if(!amt) return;
+        db.ref('usernames/'+target.toLowerCase()).once('value', s => {
+            if(s.val()) db.ref('users/'+s.val()+'/credits').set(firebase.database.ServerValue.increment(amt));
+            globalBot(`💰 Owner added ${amt} Credits to ${target}`);
+        });
+    }
+
+    if (cmd === "/gift") {
+        const gift = GIFTS[parts[2]?.toLowerCase()];
+        if(!gift || me.credits < gift.cost) return localBot("Invalid gift or low credits.");
+        db.ref('usernames/'+target.toLowerCase()).once('value', s => {
+            const uid = s.val();
+            if(uid) {
+                db.ref('users/'+me.uid+'/credits').set(firebase.database.ServerValue.increment(-gift.cost));
+                db.ref('users/'+me.uid+'/xp').set(firebase.database.ServerValue.increment(20));
+                db.ref('rooms/'+curTab.id+'/messages').push({
+                    uid: 'BOT', username: 'mig Bot', type: 'gift-shower',
+                    text: `🎁 ${me.username} gives a ${gift.name} ${gift.icon} to ${target}!`
+                });
+            }
+        });
+    }
+
+    if (cmd === "/msg") {
+        const targetName = parts[1].replace('@', '');
+        db.ref('usernames/' + targetName.toLowerCase()).once('value', snap => {
+            const uid = snap.val();
+            if (uid) openPM(uid, targetName);
+        });
+    }
+}
+
+// --- CHAT & GAME ENGINE ---
+function openChat(id, name, type) {
+    if (!openTabs[id]) {
+        openTabs[id] = { id, name, type };
+        const path = type === 'room' ? `rooms/${id}/messages` : `pms/${id}/messages`;
+        db.ref(path).limitToLast(1).on('child_added', snap => {
+            if(curTab?.id !== id) openTabs[id].unread = true;
+            renderMsg(id, snap.val());
+            updateTabStrip();
+        });
+        
+        // Auto Game Start
+        if(type === 'room' && id.startsWith('game-')) {
+            db.ref(`rooms/${id}/game`).on('value', snap => {
+                const g = snap.val();
+                if(curTab?.id === id) renderGameUI(g);
+                if(g?.status === 'idle' && Object.keys(g.players||{}).length >= 2 && !g.waitStartedAt) autoStart(id);
+            });
+        }
+    }
+    curTab = openTabs[id];
+    curTab.unread = false;
+    showSec('chat');
+    updateTabStrip();
+    loadHistory(id);
+}
+
+function autoStart(rid) {
+    const waitId = Date.now();
+    db.ref(`rooms/${rid}/game`).update({ waitStartedAt: waitId });
+    setTimeout(() => {
+        db.ref(`rooms/${rid}/game`).once('value', s => {
+            if(s.val()?.waitStartedAt === waitId) {
+                db.ref(`rooms/${rid}/game`).update({ status: 'active', waitStartedAt: null, roundTime: Date.now() });
+                globalBot("Round started automatically! Type !d or !r or !b now!");
+            }
+        });
+    }, 10000);
+}
+
+function sendMsg() {
+    const inp = document.getElementById('chat-input');
+    const val = inp.value.trim(); if(!val || !curTab) return;
+    inp.value = "";
+    if(val.startsWith('/')) return handleCmd(val);
+    
+    // Command aliases
+    if(val === "!j") return db.ref(`rooms/${curTab.id}/game/players/${me.uid}`).set({ username: me.username, status: 'alive' });
+
+    const path = curTab.type === 'room' ? `rooms/${curTab.id}/messages` : `pms/${curTab.id}/messages`;
+    db.ref(path).push({
+        uid: me.uid, username: me.username, text: val, 
+        av: me.av, color: ROLES[me.role].color, timestamp: Date.now()
+    });
+    db.ref('users/'+me.uid).update({ 
+        xp: firebase.database.ServerValue.increment(2),
+        credits: firebase.database.ServerValue.increment(1)
+    });
+}
+
+function renderMsg(tid, msg) {
+    if (curTab?.id !== tid) return;
+    const cont = document.getElementById('chat-msgs');
+    const div = document.createElement('div');
+    div.className = "msg " + (msg.type || "");
+    const av = msg.uid !== 'BOT' ? `<img src="${AVATAR_URLS[msg.av]}" class="av-img">` : "";
+    div.innerHTML = `${av}<span class="sender" style="color:${msg.color || '#1a52a8'}">${msg.username}:</span> ${msg.text}`;
+    cont.appendChild(div);
+    cont.scrollTop = cont.scrollHeight;
+}
+
+function updateTabStrip() {
+    let h = "";
+    Object.keys(openTabs).forEach(id => {
+        const t = openTabs[id];
+        const act = curTab?.id === id ? 'active' : '';
+        const unr = t.unread ? 'style="background:#f5d51c"' : '';
+        h += `<div class="tab-icon ${act}" ${unr} onclick="openChat('${t.id}','${t.name}','${t.type}')">${t.type==='pm'?'👤':'💬'}</div>`;
+    });
+    document.getElementById('dynamic-tabs').innerHTML = h;
+}
+
+function openPM(uid, name) {
+    const id = me.uid < uid ? me.uid+"_"+uid : uid+"_"+me.uid;
+    openChat(id, name, 'pm');
+}
+
+// --- UTILS ---
+function showSec(s) {
+    document.querySelectorAll('.sec').forEach(el => el.style.display = 'none');
+    document.getElementById('sec-' + s).style.display = s === 'chat' ? 'flex' : 'block';
+}
+function loadOfficialRooms() {
+    const rooms = [{id:'newbies', n:'Newbies Room'}, {id:'game-dice', n:'Dice Arena'}, {id:'game-lowcard', n:'LowCard Arena'}];
+    document.getElementById('official-rooms').innerHTML = rooms.map(r => `<div class="list-row" onclick="openChat('${r.id}','${r.n}','room')"><b>${r.n}</b></div>`).join('');
+}
+function refreshFriends() {
+    db.ref('users').limitToFirst(20).once('value', snap => {
+        let h = "";
+        snap.forEach(u => {
+            if(u.key === me.uid) return;
+            h += `<div class="list-row" onclick="openPM('${u.key}','${u.val().username}')">
+                    <img src="${AVATAR_URLS[u.val().av]}" class="av-img"><b>${u.val().username}</b>
+                  </div>`;
+        });
+        document.getElementById('friends-list').innerHTML = h;
+    });
+}
+function loadHistory(id) {
+    document.getElementById('chat-msgs').innerHTML = "";
+    const path = openTabs[id].type === 'room' ? `rooms/${id}/messages` : `pms/${id}/messages`;
+    db.ref(path).limitToLast(25).once('value', snap => snap.forEach(m => renderMsg(id, m.val())));
+}
+function renderGameUI(g) {
+    const bar = document.getElementById('game-info');
+    if(!g) return bar.style.display='none';
+    bar.style.display = 'block';
+    bar.innerText = `[DICE] Status: ${g.status} | Players: ${Object.keys(g.players||{}).length} | Round: ${g.round || 1}`;
+}
+function localBot(t) { renderMsg(curTab.id, { uid:'BOT', username:'System', text:t, type:'bot' }); }
+function globalBot(t) { db.ref(`rooms/${curTab.id}/messages`).push({ uid:'BOT', username:'mig Bot', text:t, type:'bot' }); }
+
+</script>
+</body>
+</html>
