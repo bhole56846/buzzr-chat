@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>mig33 Ultimate</title>
+<style>
+/* --- RETRO J2ME UI STYLING --- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Tahoma, Geneva, Verdana, sans-serif; background: #000; height: 100vh; overflow: hidden; }
+.app { width: 100%; height: 100dvh; max-width: 430px; margin: 0 auto; background: #f4f4f4; display: flex; flex-direction: column; position: relative; }
+
+/* Tabstrip: Like the old J2ME client top icons */
+.tabstrip { display: flex; background: #2a72a8; border-bottom: 2px solid #15466e; overflow-x: auto; flex-shrink: 0; }
+.tabstrip .tab-icon { width: 40px; height: 35px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #15466e; cursor: pointer; color: #fff; font-size: 18px; flex-shrink: 0; }
+.tabstrip .tab-icon.active { background: #eef4f8; color: #15466e; }
+.tabstrip .tab-icon.unread { animation: blink 1s infinite; }
+@keyframes blink { 50% { background: #f5d51c; } }
+
+/* Orange User Bar */
+.topbar { background: linear-gradient(to bottom, #f0a13a, #d4730a); padding: 8px 10px; display: flex; align-items: center; gap: 8px; color: #fff; border-bottom: 1px solid #8a4f06; }
+.presence-dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.3); }
+.who { flex: 1; overflow: hidden; }
+.who b { font-size: 14px; display: block; white-space: nowrap; text-overflow: ellipsis; }
+.who small { font-size: 10px; opacity: 0.9; }
+.cr-chip { background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+
+/* Content Areas */
+.content { flex: 1; overflow-y: auto; background: #fff; }
+.section-strip { background: #d4d4d4; padding: 5px 10px; font-size: 12px; font-weight: bold; border-bottom: 1px solid #bbb; }
+.list-row { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px dashed #ccc; cursor: pointer; }
+.list-row:active { background: #eaf2fa; }
+
+/* Chat Bubbles */
+.msg { padding: 8px 10px; border-bottom: 1px dashed #eee; font-size: 13px; line-height: 1.4; }
+.msg.bot { background: #f0f4f7; color: #1c3a55; font-family: monospace; }
+.msg.pm { background: #fff9e6; border-left: 3px solid #f0a13a; }
+.sender { font-weight: bold; margin-right: 5px; }
+.lvl-tag { font-size: 9px; color: #666; margin-left: 4px; font-weight: normal; }
+
+/* Input Bar */
+.input-bar { display: flex; padding: 8px; background: #d8dadb; border-top: 1px solid #bbb; gap: 5px; }
+.input-bar input { flex: 1; padding: 8px; border: 1px solid #999; border-radius: 3px; font-size: 14px; }
+.input-bar button { padding: 0 15px; background: linear-gradient(to bottom, #ffd87a, #d97f10); border: 1px solid #7a4f0a; font-weight: bold; border-radius: 3px; }
+
+/* Popups */
+#level-up-toast { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); background: #1c3a55; color: #ffcf6e; padding: 20px; border: 3px solid #ffcf6e; border-radius: 10px; z-index: 999; display: none; text-align: center; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+
+.view { display: none; flex-direction: column; height: 100%; }
+.active-view { display: flex; }
+</style>
+</head>
+<body>
+
+<div class="app">
+    <!-- LEVEL UP NOTIFICATION -->
+    <div id="level-up-toast">
+        <h2>LEVEL UP!</h2>
+        <p id="lvl-txt">You reached Level 5</p>
+    </div>
+
+    <!-- AUTH VIEW -->
+    <div id="view-auth" class="view active-view">
+        <div style="background:#2a72a8; padding:40px 20px; text-align:center; color:#fff;">
+            <h1 style="font-style:italic; font-size:40px;">mig<span style="color:#f0a13a">33</span></h1>
+            <p>Ultimate Clone</p>
+        </div>
+        <div class="padded" style="padding:20px;">
+            <input type="text" id="auth-email" placeholder="Email" style="width:100%; padding:10px; margin-bottom:10px;">
+            <input type="password" id="auth-pass" placeholder="Password" style="width:100%; padding:10px; margin-bottom:10px;">
+            <button onclick="login()" style="width:100%; padding:12px; margin-bottom:20px;">Login</button>
+            <hr>
+            <input type="text" id="reg-user" placeholder="Username" style="width:100%; padding:10px; margin:10px 0;">
+            <button onclick="register()" style="width:100%; padding:12px; background:#2a72a8; color:#fff;">Register New ID</button>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD -->
+    <div id="view-main" class="view">
+        <div class="tabstrip" id="main-tabs">
+            <div class="tab-icon active" onclick="showSection('friends')">👥</div>
+            <div class="tab-icon" onclick="showSection('rooms')">💬</div>
+            <div id="active-chat-tabs" style="display:flex;"></div>
+        </div>
+        <div class="topbar">
+            <div class="presence-dot" id="my-presence"></div>
+            <div class="who" id="my-info"></div>
+            <div class="cr-chip" id="my-cr">💰 0</div>
+        </div>
+        
+        <!-- FRIENDS SECTION -->
+        <div id="sec-friends" class="sec">
+            <div class="section-strip">Friends Online (Click to PM)</div>
+            <div id="friends-list"></div>
+        </div>
+
+        <!-- ROOMS SECTION -->
+        <div id="sec-rooms" class="sec" style="display:none;">
+            <div class="section-strip">Official Rooms</div>
+            <div id="official-rooms"></div>
+        </div>
+
+        <!-- CHAT SECTION -->
+        <div id="sec-chat" class="sec" style="display:none; flex:1; flex-direction:column; height: calc(100% - 100px);">
+            <div id="chat-msgs" style="flex:1; overflow-y:auto; background:#fff;"></div>
+            <div id="game-bar" style="display:none; background:#1c3a55; color:#ffcf6e; padding:5px; font-size:11px; text-align:center;"></div>
+            <div class="input-bar">
+                <input type="text" id="chat-input" placeholder="Type /help for commands...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// --- CONFIG & INIT ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBL4fxOpQcu0otOtCzhq95X-uULIHrTP20",
+  authDomain: "buzzr-987ea.firebaseapp.com",
+  databaseURL: "https://buzzr-987ea-default-rtdb.firebaseio.com",
+  projectId: "buzzr-987ea",
+  storageBucket: "buzzr-987ea.firebasestorage.app",
+  messagingSenderId: "557198372950",
+  appId: "1:557198372950:web:ab3415c2fe09cbf7d34bf7"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+// --- STATE ---
+let me = null;
+let currentTab = null; // { id, name, type: 'room' | 'pm' }
+let openTabs = {};
+let lastLevel = 0;
+
+const ROLES = {
+    member: { rank: 0, color: '#1a52a8' },
+    submerchant: { rank: 1, color: '#e75fb3' },
+    merchant: { rank: 1, color: '#9b59b6' },
+    redmerchant: { rank: 1, color: '#e32636' },
+    mentor: { rank: 2, color: '#e63946' },
+    globaladmin: { rank: 4, color: '#e8820c' },
+    owner: { rank: 5, color: '#e8820c' }
+};
+
+// --- AUTH ---
+function login() { auth.signInWithEmailAndPassword(document.getElementById('auth-email').value, document.getElementById('auth-pass').value); }
+function register() {
+    const user = document.getElementById('reg-user').value.trim();
+    auth.createUserWithEmailAndPassword(document.getElementById('auth-email').value, document.getElementById('auth-pass').value)
+    .then(res => {
+        db.ref('users/' + res.user.uid).set({ username: user, credits: 500, xp: 0, role: 'member', status: 'Online' });
+        db.ref('usernames/' + user.toLowerCase()).set(res.user.uid);
+    });
+}
+
+auth.onAuthStateChanged(user => {
+    if (user) {
+        db.ref('users/' + user.uid).on('value', snap => {
+            me = snap.val();
+            me.uid = user.uid;
+            updateProfileUI();
+            checkLevelUp();
+        });
+        showSection('friends');
+        document.getElementById('view-auth').classList.remove('active-view');
+        document.getElementById('view-main').classList.add('active-view');
+        loadRoomsList();
+    } else {
+        document.getElementById('view-main').classList.remove('active-view');
+        document.getElementById('view-auth').classList.add('active-view');
+    }
+});
+
+// --- CORE SYSTEMS ---
+
+function getLevel(xp) { return Math.floor((xp || 0) / 100) + 1; }
+
+function updateProfileUI() {
+    const lvl = getLevel(me.xp);
+    document.getElementById('my-info').innerHTML = `<b style="color:${ROLES[me.role].color}">${me.username}</b><small>Level ${lvl} ${me.role}</small>`;
+    document.getElementById('my-cr').innerText = "💰 " + me.credits;
+    document.getElementById('my-presence').style.background = "#4ec73f";
+}
+
+function checkLevelUp() {
+    const lvl = getLevel(me.xp);
+    if (lastLevel > 0 && lvl > lastLevel) {
+        const toast = document.getElementById('level-up-toast');
+        document.getElementById('lvl-txt').innerText = `You reached Level ${lvl}`;
+        toast.style.display = "block";
+        setTimeout(() => toast.style.display="none", 4000);
+    }
+    lastLevel = lvl;
+}
+
+function loadRoomsList() {
+    const rooms = [
+        {id: 'newbies', name: 'Newbies Room'},
+        {id: 'game-lowcard', name: 'LowCard Arena'},
+        {id: 'game-dice', name: 'Dice Arena'},
+        {id: 'game-cricket', name: 'Cricket Arena'}
+    ];
+    let html = "";
+    rooms.forEach(r => {
+        html += `<div class="list-row" onclick="openChat('${r.id}', '${r.name}', 'room')">
+                    <b>${r.name}</b>
+                 </div>`;
+    });
+    document.getElementById('official-rooms').innerHTML = html;
+}
+
+// --- CHAT & TABS ---
+
+function openChat(id, name, type) {
+    if (!openTabs[id]) {
+        openTabs[id] = { id, name, type };
+        const path = type === 'room' ? `rooms/${id}/messages` : `pms/${id}/messages`;
+        
+        // Listen for new messages
+        db.ref(path).limitToLast(1).on('child_added', snap => {
+            if (currentTab?.id !== id) openTabs[id].unread = true;
+            renderMsg(id, snap.val());
+            updateTabIcons();
+        });
+
+        // If it's a game room, start the auto-engine
+        if (type === 'room' && id.startsWith('game-')) {
+            db.ref(`rooms/${id}/game`).on('value', snap => {
+                const game = snap.val();
+                if (currentTab?.id === id) renderGameUI(game);
+                if (game?.status === 'idle' && Object.keys(game.players || {}).length >= 2 && !game.waitStartedAt) {
+                    autoStartGame(id);
+                }
+            });
+        }
+    }
+    currentTab = openTabs[id];
+    currentTab.unread = false;
+    showSection('chat');
+    updateTabIcons();
+    loadHistory(id);
+}
+
+function updateTabIcons() {
+    let html = "";
+    Object.keys(openTabs).forEach(tid => {
+        const t = openTabs[tid];
+        const activeCls = currentTab?.id === tid ? 'active' : '';
+        const unreadCls = t.unread ? 'unread' : '';
+        html += `<div class="tab-icon ${activeCls} ${unreadCls}" onclick="openChat('${t.id}','${t.name}','${t.type}')">${t.type==='pm'?'👤':'💬'}</div>
