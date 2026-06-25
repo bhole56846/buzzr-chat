@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>CircleHub</title>
+<style>
+/* ---- Retro Style Preserved from your Working File ---- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; width: 100%; overflow: hidden; }
+body { font-family: Tahoma, Geneva, Verdana, Arial, sans-serif; background: #000; }
+.app { width: 100%; height: 100vh; height: 100dvh; margin: 0 auto; background: #f4f4f4; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+@media (min-width: 600px) { .app { max-width: 430px; box-shadow: 0 0 50px rgba(0,0,0,0.6); border-left: 1px solid #000; border-right: 1px solid #000; } }
+
+.tabstrip { display: flex; align-items: stretch; background: #2a72a8; border-bottom: 2px solid #15466e; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
+.tabstrip::-webkit-scrollbar { display: none; }
+.tabstrip .tab-current { flex-shrink: 0; padding: 7px 10px; font-size: 12px; font-weight: bold; color: #15466e; background: #eef4f8; border-right: 1px solid #15466e; display: flex; align-items: center; gap: 4px; white-space: nowrap; max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
+.tabstrip .tab-icon { flex-shrink: 0; width: 34px; display: flex; align-items: center; justify-content: center; font-size: 15px; background: linear-gradient(to bottom, #4f97cf, #2a72a8); border-right: 1px solid #15466e; cursor: pointer; color: #fff; }
+
+.topbar { background: linear-gradient(to bottom, #f0a13a 0%, #e0820f 55%, #d4730a 100%); border-bottom: 1px solid #8a4f06; padding: 8px 10px; display: flex; align-items: center; gap: 8px; color: #fff; flex-shrink: 0; }
+.presence-dot { width: 13px; height: 13px; border-radius: 50%; background: #4ec73f; border: 1px solid #1f6e15; flex-shrink: 0; }
+.who { flex: 1; min-width: 0; }
+.who .uname { font-weight: bold; font-size: 14px; display:block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who .ustatus { font-size: 10px; color: #fff2da; opacity: 0.9; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cr-coin { display: flex; align-items: center; gap: 3px; background: rgba(0,0,0,0.18); border-radius: 9px; padding: 2px 7px; font-size: 11px; font-weight: bold; color: #fff; }
+
+.content { flex: 1; padding: 0; overflow-y: auto; min-height: 0; background: #fff; }
+.section-strip { background: #d4d4d4; border-top: 1px solid #b8b8b8; border-bottom: 1px solid #b8b8b8; font-size: 13px; font-weight: bold; color: #1c2733; padding: 5px 10px; text-transform: uppercase; }
+.list-row { display: flex; align-items: center; gap: 7px; padding: 10px; border-bottom: 1px dashed #b9c6cf; cursor: pointer; background: #fff; }
+
+/* Role Colors */
+.role-owner { color: #e8820c !important; }
+.role-merchant { color: #9b59b6 !important; }
+.role-submerchant { color: #e75fb3 !important; }
+.role-redmerchant { color: #e32636 !important; }
+
+.msg { padding: 5px 10px; border-bottom: 1px dashed #e0e6ea; font-size: 13px; }
+.msg.bot { background: #f0f4f7; color: #1c3a55; border-left: 3px solid #2a72a8; }
+.chat-input-bar { display: flex; gap: 6px; padding: 8px; background: #d8dadb; border-top: 1px solid #b9c6cf; flex-shrink: 0; }
+.chat-input-bar input { flex: 1; padding: 8px; border: 1px solid #8a96a0; border-radius: 2px; }
+.softkey-bar { display: flex; justify-content: space-between; background: #1c1c1c; padding: 7px 14px; flex-shrink: 0; }
+.softkey { color: #cfe3f5; font-size: 13px; font-weight: bold; cursor: pointer; }
+
+/* Admin Dashboard Modal */
+.modal { position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-box { background: #fff; width: 100%; border-radius: 4px; border: 2px solid #2a72a8; padding: 15px; }
+.admin-input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; }
+.admin-btn { width: 100%; padding: 10px; border: none; font-weight: bold; color: #fff; margin-bottom: 5px; cursor: pointer; }
+
+.view { display: none; }
+.view.active { display: block; }
+.view.flex-active { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
+</style>
+</head>
+<body>
+<div class="app">
+  
+  <!-- Login Screen -->
+  <div id="view-auth" class="view active">
+    <div class="content" style="padding: 20px; text-align: center;">
+      <h1 style="font-style: italic; color: #2a72a8; font-size: 50px;">Circle<span>Hub</span></h1>
+      <p style="font-size: 11px; color: #666; margin-bottom: 30px;">SECURE TRADE & ARENA</p>
+      <input type="email" id="login-email" placeholder="Email (Gmail dots ignored)" style="width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #999;">
+      <input type="password" id="login-password" placeholder="Password" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #999;">
+      <button onclick="authAction('login')" style="width: 100%; padding: 12px; background: #f37021; color: #fff; border: none; font-weight: bold;">Login</button>
+      <hr style="margin: 20px 0;">
+      <input type="text" id="signup-username" placeholder="Username" style="width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #999;">
+      <button onclick="authAction('signup')" style="width: 100%; padding: 12px; background: #2a72a8; color: #fff; border: none; font-weight: bold;">Register New Account</button>
+    </div>
+  </div>
+
+  <!-- Home/Feed View -->
+  <div id="view-home" class="view">
+    <div class="tabstrip">
+      <div class="tab-current">🏠 Home</div>
+      <div class="tab-icon" onclick="showView('view-rooms')">💬</div>
+      <div class="tab-icon" onclick="openAdminPanel()">👑</div>
+    </div>
+    <div class="topbar">
+      <div class="presence-dot"></div>
+      <div class="who"><b id="my-name">User</b><small id="my-lvl">Level 1 Member</small></div>
+      <div class="eco-info" style="text-align: right;">
+        <div class="cr-coin" id="my-cr">💰 0</div>
+        <small id="my-npr" style="font-size: 8px; color: #fff;">रु 0.00</small>
+      </div>
+    </div>
+    <div class="content">
+        <div class="section-strip">What's on your mind?</div>
+        <div style="padding: 10px;">
+            <textarea id="status-input" style="width: 100%; height: 50px; padding: 10px; border: 1px solid #ddd;"></textarea>
+            <button onclick="postFeed()" style="width: 100%; padding: 10px; background: #f37021; color: #fff; border: none; margin-top: 5px;">Post Status</button>
+        </div>
+        <div id="feed-list"></div>
+    </div>
+  </div>
+
+  <!-- Room Browser View -->
+  <div id="view-rooms" class="view">
+    <div class="tabstrip">
+      <div class="tab-icon" onclick="showView('view-home')">🏠</div>
+      <div class="tab-current">💬 Chat Rooms</div>
+    </div>
+    <div class="content">
+      <div class="section-strip">Official Global Rooms</div>
+      <div class="list-row" onclick="enterRoom('welcome_zone', 'Welcome Zone 🤝')">
+        <div style="font-size: 20px;">🤝</div>
+        <div><b>Welcome Zone</b><br><small>New arrivals meet here</small></div>
+      </div>
+      <div class="list-row" onclick="enterRoom('vibe_market', 'Vibe Market 🛍️')">
+        <div style="font-size: 20px;">🛍️</div>
+        <div><b>Vibe Market</b><br><small>Trade Vouchers & Credits</small></div>
+      </div>
+      <div class="list-row" onclick="enterRoom('game_central', 'Game Central 🏟️')">
+        <div style="font-size: 20px;">🏟️</div>
+        <div><b>Game Central</b><br><small>Cricket & Arena Games</small></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Window View -->
+  <div id="view-chat" class="view flex-active">
+    <div class="topbar">
+      <span onclick="showView('view-rooms')" style="cursor: pointer; padding-right: 10px;">←</span>
+      <div class="who"><b id="active-title">Room</b></div>
+      <div class="cr-coin" id="chat-cr">💰 0</div>
+    </div>
+    <div id="game-strip" style="background: #1c3a55; color: #ffcf6e; padding: 6px; font-size: 11px; text-align: center; display: none;"></div>
+    <div class="content" id="chat-msgs-box" style="background: #fff; overflow-y: auto;"></div>
+    <div class="chat-input-bar">
+      <input type="text" id="m-input" placeholder="Type here...">
+      <button onclick="sendChat()" style="background: #f37021; color: #fff; border: none; padding: 8px 15px;">Send</button>
+    </div>
+  </div>
+
+  <!-- Admin Panel Modal -->
+  <div id="admin-modal" class="modal">
+    <div class="modal-box">
+        <h3>Owner Panel 👑</h3>
+        <hr style="margin: 10px 0;">
+        <input type="text" id="adm-user" class="admin-input" placeholder="Target Username">
+        <input type="number" id="adm-amt" class="admin-input" placeholder="CR Amount">
+        <button class="admin-btn" style="background: #f37021;" onclick="adminUpdate('credits')">Add Credits</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px;">
+            <button class="admin-btn" style="background: #e32636;" onclick="adminUpdate('redmerchant')">Set Red M</button>
+            <button class="admin-btn" style="background: #9b59b6;" onclick="adminUpdate('merchant')">Set Merchant</button>
+            <button class="admin-btn" style="background: #e75fb3;" onclick="adminUpdate('submerchant')">Set Sub M</button>
+            <button class="admin-btn" style="background: #555;" onclick="adminUpdate('globaladmin')">Set Admin</button>
+        </div>
+        <button onclick="document.getElementById('admin-modal').style.display='none'" style="width:100%; margin-top:15px; padding:5px; background:#eee; border:1px solid #ccc;">Close</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBL4fxOpQcu0otOtCzhq95X-uULIHrTP20",
+  authDomain: "buzzr-987ea.firebaseapp.com",
+  databaseURL: "https://buzzr-987ea-default-rtdb.firebaseio.com",
+  projectId: "buzzr-987ea",
+  storageBucket: "buzzr-987ea.firebasestorage.app",
+  messagingSenderId: "557198372950",
+  appId: "1:557198372950:web:ab3415c2fe09cbf7d34bf7"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+let me = null;
+let activeRid = null;
+const NPR_RATE = 151.39;
+
+// SECURITY: Anti Gmail Dot Trick
+function normalizeEmail(e) {
+    let [u, d] = e.toLowerCase().trim().split('@');
+    if (d === 'gmail.com') u = u.split('+')[0].replace(/\./g, '');
+    return u + '@' + d;
+}
+
+// SECURITY: Device ID Limit
+function getFp() {
+    let id = localStorage.getItem('circle_fp');
+    if (!id) { id = 'm_' + Math.random().toString(36).substr(2, 9); localStorage.setItem('circle_fp', id); }
+    return id;
+}
+
+// AUTH
+function authAction(type) {
+    const e = normalizeEmail(document.getElementById('login-email').value);
+    const p = document.getElementById('login-password').value;
+    const u = document.getElementById('signup-username').value.trim();
+
+    if (type === 'login') {
+        auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
+    } else {
+        const fp = getFp();
+        db.ref('devices/' + fp).once('value', s => {
+            if ((s.val() || 0) >= 2) return alert("Security Limit: 2 IDs max per phone.");
+            auth.createUserWithEmailAndPassword(e, p).then(res => {
+                db.ref('users').once('value', us => {
+                    const isFirst = !us.exists();
+                    db.ref('users/' + res.user.uid).set({
+                        username: u || e.split('@')[0], credits: isFirst ? 100000 : 500, xp: 0, role: isFirst ? 'owner' : 'member', fp, email: e
+                    });
+                    db.ref('usernames/'+(u || e.split('@')[0]).toLowerCase()).set(res.user.uid);
+                    db.ref('devices/' + fp).set((s.val() || 0) + 1);
+                });
+            }).catch(err => alert(err.message));
+        });
+    }
+}
+
+auth.onAuthStateChanged(user => {
+    if (user) {
+        document.getElementById('view-auth').style.display = 'none';
+        db.ref('users/' + user.uid).on('value', snap => {
+            me = snap.val(); me.uid = user.uid;
+            updateUI();
+        });
+        showView('view-home');
+        loadFeeds();
+        startGlobalVouchers();
+    } else {
+        document.getElementById('view-auth').style.display = 'block';
+    }
+});
+
+function updateUI() {
+    if(!me) return;
+    document.getElementById('my-cr').innerText = "💰 " + Math.floor(me.credits).toLocaleString();
+    document.getElementById('chat-cr').innerText = "💰 " + Math.floor(me.credits).toLocaleString();
+    document.getElementById('my-npr').innerText = "रु " + ((me.credits/1000)*NPR_RATE).toFixed(2);
+    document.getElementById('my-name').innerText = me.username;
+    document.getElementById('my-name').className = 'role-' + me.role;
+    document.getElementById('my-lvl').innerText = "Level " + (Math.floor(Math.sqrt(me.xp/50))+1) + " " + me.role.toUpperCase();
+}
+
+// FEEDS
+function postFeed() {
+    const t = document.getElementById('status-input').value;
+    if(!t) return;
+    db.ref('feeds').push({ name: me.username, text: t, role: me.role, time: Date.now() });
+    document.getElementById('status-input').value = "";
+}
+
+function loadFeeds() {
+    db.ref('feeds').limitToLast(10).on('value', s => {
+        const c = document.getElementById('feed-list'); c.innerHTML = "";
+        s.forEach(p => {
+            const d = p.val();
+            c.innerHTML += `<div class="list-row"><b>${d.name}</b>: ${d.text}</div>`;
+        });
+    });
+}
+
+// CHAT
+function enterRoom(id, title) {
+    activeRid = id;
+    document.getElementById('active-title').innerText = title;
+    showView('view-chat');
+    const box = document.getElementById('chat-msgs-box');
+    db.ref(`messages/${id}`).limitToLast(30).on('value', s => {
+        box.innerHTML = "";
+        s.forEach(m => {
+            const d = m.val();
+            const isMe = d.uid === auth.currentUser.uid;
+            box.innerHTML += `<div class="msg"><b>${d.name}</b>: ${d.text}</div>`;
+        });
+        box.scrollTop = box.scrollHeight;
+    });
+
+    // Game Logic for Central
+    if(id === 'game_central') {
+        db.ref('games/active').on('value', s => {
+            const g = s.val(); const bar = document.getElementById('game-strip');
+            if(g) {
+                bar.style.display = 'block'; bar.innerText = `${g.type.toUpperCase()}: ${g.status} | Players: ${Object.keys(g.players||{}).length}`;
+                if(g.status==='idle' && Object.keys(g.players||{}).length >= 2 && !g.lock) triggerGame(g.type);
+            } else bar.style.display = 'none';
+        });
+    }
+}
+
+function triggerGame(type) {
+    db.ref('games/active/lock').set(true);
+    setTimeout(() => {
+        const bowl = Math.floor(Math.random()*6)+1;
+        db.ref('games/active/players').once('value', s => {
+            const players = s.val() || {}; let logs = [`Bowl: ${bowl}`];
+            Object.keys(players).forEach(uid => {
+                const p = players[uid];
+                if(p.status==='batting') {
+                    const bat = p.move || Math.floor(Math.random()*6)+1;
+                    if(bat===bowl){ db.ref(`games/active/players/${uid}/status`).set('out'); logs.push(`${p.name} OUT`); }
+                    else { db.ref(`games/active/players/${uid}`).update({ score:p.score+bat, move:null }); }
+                }
+            });
+            db.ref('messages/game_central').push({ uid:'BOT', text: logs.join(" | ") });
+            db.ref('games/active/players').once('value', ns => {
+                const live = Object.values(ns.val()||{}).filter(x => x.status==='batting');
+                if(live.length===0) db.ref('games/active').set({ status:'idle', players:null, type:type });
+                else db.ref('games/active/lock').set(false);
+            });
+        });
+    }, 10000);
+}
+
+function sendChat() {
+    const i = document.getElementById('m-input');
+    if(!i.value || !activeRid) return;
+    const t = i.value.trim();
+    if(t === "!j") {
+        db.ref(`games/active/players/${me.uid}`).set({ name:me.username, status:'batting', score:0 });
+    } else if(t.startsWith("!b")){
+        db.ref(`games/active/players/${me.uid}/move`).set(parseInt(t.split(" ")[1]));
+    } else {
+        db.ref(`messages/${activeRid}`).push({ uid: me.uid, name: me.username, text: t, role: me.role, time: Date.now() });
+    }
+    db.ref(`users/${me.uid}/xp`).set(firebase.database.ServerValue.increment(1));
+    i.value = "";
+}
+
+// VOUCHERS
+function startGlobalVouchers() {
+    setInterval(() => {
+        ['welcome_zone', 'vibe_market', 'game_central'].forEach(rid => {
+            if (Math.random() > 0.8) {
+                const code = Math.floor(1000 + Math.random() * 8999);
+                const msg = db.ref(`messages/${rid}`).push({ uid: 'BOT', text: `🎟️ Voucher: /redeem ${code} (20s)` });
+                setTimeout(() => msg.remove(), 20000);
+            }
+        });
+    }, 180000);
+}
+
+// ADMIN
+function openAdminPanel() {
+    if(['owner','admin','globaladmin'].includes(me.role)) document.getElementById('admin-modal').style.display='flex';
+}
+
+function adminUpdate(type) {
+    const u = document.getElementById('adm-user').value.toLowerCase();
+    const a = document.getElementById('adm-amt').value;
+    db.ref('usernames/'+u).once('value', s => {
+        const uid = s.val(); if(!uid) return alert("User not found");
+        if(type==='credits') db.ref(`users/${uid}/credits`).set(firebase.database.ServerValue.increment(parseInt(a)));
+        else db.ref(`users/${uid}/role`).set(type);
+        alert("Done!");
+    });
+}
+
+function showView(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
