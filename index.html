@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CircleHub - Nepal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #f37021; --p-dark: #d45d1a; --bg: #f0f2f5;
+            --white: #ffffff; --grey: #65676b;
+            --purple: #9b59b6; --pink: #e75fb3; --red: #e32636; --admin: #e8820c;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; outline: none; }
+        body { background-color: #000; height: 100vh; overflow: hidden; }
+        .app-shell { width: 100%; max-width: 500px; margin: 0 auto; height: 100dvh; background: var(--bg); display: flex; flex-direction: column; position: relative; }
+
+        /* Role Styles */
+        .role-owner, .role-globaladmin { color: var(--admin) !important; font-weight: 800; }
+        .role-redmerchant { color: var(--red) !important; font-weight: 800; }
+        .role-merchant { color: var(--purple) !important; font-weight: 800; }
+        .role-submerchant { color: var(--pink) !important; font-weight: 800; }
+        .tag { font-size: 9px; padding: 1px 4px; border-radius: 3px; color: white !important; margin-left: 5px; text-transform: uppercase; vertical-align: middle; }
+        .tag-m { background: var(--purple); } .tag-sm { background: var(--pink); } .tag-rm { background: var(--red); } .tag-a { background: #444; }
+
+        /* Header */
+        .header { background: linear-gradient(135deg, var(--primary), var(--p-dark)); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; color: white; flex-shrink: 0; z-index: 100; }
+        .header h1 { font-size: 22px; font-weight: 900; font-style: italic; letter-spacing: -1.5px; }
+        .eco-box { text-align: right; line-height: 1.2; font-weight: 700; }
+        .eco-box b { font-size: 13px; display: block; }
+        .eco-box small { font-size: 9px; opacity: 0.9; display: block; }
+
+        /* Navigation Views */
+        .view { display: none; flex: 1; overflow-y: auto; background: var(--bg); padding-bottom: 80px; }
+        .view.active { display: block; }
+        .view.chat-view-mode.active { display: flex; flex-direction: column; background: #fff; padding-bottom: 0; }
+
+        /* Home/Feed */
+        .post-input-box { background: white; margin: 10px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .post-input-box textarea { width: 100%; height: 60px; border: none; background: #f0f2f5; padding: 12px; border-radius: 10px; resize: none; font-size: 14px; margin-bottom: 10px; }
+        .btn-post { width: 100%; padding: 12px; border: none; background: var(--primary); color: white; font-weight: 800; border-radius: 10px; cursor: pointer; }
+        .feed-card { background: white; margin: 10px; padding: 15px; border-radius: 12px; border: 1px solid #eee; }
+        .feed-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .feed-header img { width: 32px; height: 32px; border-radius: 50%; background: #eee; }
+
+        /* Chat System */
+        .room-item { background: white; margin: 8px 12px; padding: 15px; border-radius: 12px; display: flex; align-items: center; gap: 15px; cursor: pointer; border: 1px solid #eee; }
+        .room-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; color: white; }
+
+        .chat-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; background: #fdfdfd; }
+        .bubble { max-width: 85%; padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,0.05); position: relative; }
+        .bubble.sent { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 2px; }
+        .bubble.received { align-self: flex-start; background: #f0f2f5; color: #1c1e21; border-bottom-left-radius: 2px; }
+        .bubble small { display: block; font-size: 10px; font-weight: 800; margin-bottom: 4px; }
+        .av-head { width: 20px; height: 20px; vertical-align: middle; border-radius: 3px; margin-right: 5px; }
+
+        .game-info-strip { background: #1c3a55; color: #ffcf6e; padding: 6px; font-size: 11px; text-align: center; font-weight: bold; flex-shrink: 0; }
+
+        /* Input Area (Fixed) */
+        .chat-input-area { padding: 10px 15px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center; flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom); }
+        .chat-input-area input { flex: 1; border: none; background: #f0f2f5; padding: 12px 15px; border-radius: 25px; font-size: 14px; }
+        .btn-send-chat { background: var(--primary); color: white; border: none; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+        /* Bottom Menu */
+        .bottom-nav { position: absolute; bottom: 0; width: 100%; height: 70px; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-link { text-align: center; color: #888; font-size: 10px; font-weight: 700; cursor: pointer; }
+        .nav-link.active { color: var(--primary); }
+        .nav-link span { display: block; font-size: 24px; margin-bottom: 3px; }
+
+        /* Admin */
+        .admin-card { background: white; margin: 15px; padding: 20px; border-radius: 15px; border: 1px solid #ddd; }
+        .dash-input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; margin-bottom: 10px; font-size: 14px; }
+
+        #auth-overlay { position: absolute; inset: 0; background: white; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="app-shell">
+        <!-- Header -->
+        <header class="header" id="app-header" style="display:none;">
+            <h1 onclick="location.reload()">CircleHub</h1>
+            <div class="eco-box">
+                <b>💰 <span id="cr-val">0</span></b>
+                <small>रु <span id="npr-val">0.00</span> | $<span id="usd-val">0.00</span></small>
+            </div>
+        </header>
+
+        <!-- View: Feeds (Home) -->
+        <div id="view-home" class="view active">
+            <div class="post-input-box">
+                <textarea id="status-text" placeholder="What's happening?"></textarea>
+                <button class="btn-post" onclick="postStatus()">POST FEED</button>
+            </div>
+            <div id="feed-container"></div>
+        </div>
+
+        <!-- View: Rooms List -->
+        <div id="view-rooms" class="view">
+            <div style="padding: 15px 15px 5px; font-size: 11px; font-weight: 800; color: #888;">GLOBAL CHATROOMS</div>
+            <div class="room-item" onclick="joinRoom('welcome_zone', 'Welcome Zone 🤝', '#3498db')">
+                <div class="room-icon" style="background:#3498db;">🤝</div>
+                <div style="flex:1"><b>Welcome Zone</b><br><small>All new members meet here</small></div>
+            </div>
+            <div class="room-item" onclick="joinRoom('vibe_market', 'Vibe Market 🛍️', '#9b59b6')">
+                <div class="room-icon" style="background:#9b59b6;">🛍️</div>
+                <div style="flex:1"><b>Vibe Market</b><br><small>Virtual Goods & CR Trade</small></div>
+            </div>
+            <div class="room-item" onclick="joinRoom('game_central', 'Game Central 🏟️', '#e67e22')">
+                <div class="room-icon" style="background:#e67e22;">🏟️</div>
+                <div style="flex:1"><b>Game Central</b><br><small>Cricket & Arena Games</small></div>
+            </div>
+        </div>
+
+        <!-- View: Admin Panel -->
+        <div id="view-admin" class="view">
+            <div style="padding:15px; font-size:12px; font-weight:800; color:#888;">OWNER CONTROL 👑</div>
+            <div class="admin-card">
+                <input type="text" id="target-user" class="dash-input" placeholder="Username (no @)">
+                <input type="number" id="cr-amt" class="dash-input" placeholder="Credits Amount">
+                <button class="btn-post" style="margin-bottom:10px;" onclick="adminAction('credits')">ADD CREDITS</button>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <button class="btn-post" style="background:var(--red);" onclick="adminAction('redmerchant')">SET RED M</button>
+                    <button class="btn-post" style="background:var(--purple);" onclick="adminAction('merchant')">SET MERCHANT</button>
+                    <button class="btn-post" style="background:var(--pink);" onclick="adminAction('submerchant')">SET PINK M</button>
+                    <button class="btn-post" style="background:#555;" onclick="adminAction('globaladmin')">SET ADMIN</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- View: Active Chat -->
+        <div id="view-chat" class="view chat-view-mode">
+            <div class="chat-header">
+                <span onclick="switchView('rooms')" style="cursor:pointer; font-weight: 900; font-size: 20px;">←</span>
+                <b id="chat-title">Chat Room</b>
+            </div>
+            <div id="game-arena-strip" class="game-info-strip" style="display:none; background: #000; color: #0f0;"></div>
+            <div id="chat-messages-list" class="chat-container"></div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input-field" placeholder="Type here...">
+                <button class="btn-send-chat" onclick="sendChatMessage()">➤</button>
+            </div>
+        </div>
+
+        <!-- Bottom Menu -->
+        <nav class="bottom-nav" id="app-bottom-nav" style="display:none;">
+            <div class="nav-link active" onclick="switchView('home', this)"><span>🏠</span>Home</div>
+            <div class="nav-link" onclick="switchView('rooms', this)"><span>💬</span>Chat</div>
+            <div class="nav-link" id="nav-adm-btn" style="display:none;" onclick="switchView('admin', this)"><span>👑</span>Admin</div>
+            <div class="nav-link" onclick="logout()"><span>⚙️</span>Logout</div>
+        </nav>
+
+        <!-- Auth -->
+        <div id="auth-overlay">
+            <h1 style="font-size: 60px; font-weight: 900; color: var(--primary); font-style: italic; letter-spacing: -4px;">Circle<span>Hub</span></h1>
+            <p style="margin-bottom: 40px; font-weight: 700; color: #888;">Connect · Play · Trade</p>
+            <input type="email" id="auth-email" class="auth-input" placeholder="Email Address">
+            <input type="password" id="auth-pass" class="auth-input" placeholder="Password">
+            <button onclick="handleAuth('login')" style="width: 100%; padding: 15px; border: none; background: var(--primary); color: white; font-weight: 900; border-radius: 12px; font-size: 16px;">LOG IN</button>
+            <p onclick="handleAuth('signup')" style="margin-top: 25px; color: var(--primary); font-weight: 800; cursor: pointer;">Register New ID</p>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBL4fxOpQcu0otOtCzhq95X-uULIHrTP20",
+            authDomain: "buzzr-987ea.firebaseapp.com",
+            databaseURL: "https://buzzr-987ea-default-rtdb.firebaseio.com",
+            projectId: "buzzr-987ea",
+            storageBucket: "buzzr-987ea.firebasestorage.app",
+            messagingSenderId: "557198372950",
+            appId: "1:557198372950:web:ab3415c2fe09cbf7d34bf7"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let me = null;
+        let activeRid = null;
+        const NPR_RATE = 151.39;
+
+        // AUTH & SECURITY
+        function cleanEmail(e) {
+            let [u, d] = e.toLowerCase().trim().split('@');
+            if (d === 'gmail.com') u = u.split('+')[0].replace(/\./g, '');
+            return u + '@' + d;
+        }
+
+        function handleAuth(type) {
+            const e = document.getElementById('auth-email').value;
+            const p = document.getElementById('auth-pass').value;
+            if (type === 'login') {
+                auth.signInWithEmailAndPassword(cleanEmail(e), p).catch(err => alert(err.message));
+            } else {
+                auth.createUserWithEmailAndPassword(cleanEmail(e), p).then(res => {
+                    db.ref('users').once('value', s => {
+                        const isFirst = !s.exists();
+                        db.ref('users/' + res.user.uid).set({
+                            username: e.split('@')[0], credits: isFirst ? 500000 : 500, xp: 0, role: isFirst ? 'owner' : 'member', av: Math.floor(Math.random() * 800)
+                        });
+                        db.ref('usernames/'+e.split('@')[0].toLowerCase()).set(res.user.uid);
+                    });
+                }).catch(err => alert(err.message));
+            }
+        }
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('app-header').style.display = 'flex';
+                document.getElementById('app-bottom-nav').style.display = 'flex';
+                db.ref('users/' + user.uid).on('value', snap => {
+                    me = snap.val(); me.uid = user.uid;
+                    document.getElementById('cr-val').innerText = Math.floor(me.credits).toLocaleString();
+                    document.getElementById('usd-val').innerText = (me.credits / 1000).toFixed(2);
+                    document.getElementById('npr-val').innerText = ((me.credits/1000)*NPR_RATE).toFixed(2);
+                    if (['owner', 'admin', 'globaladmin'].includes(me.role)) document.getElementById('nav-adm-btn').style.display = 'block';
+                });
+                loadFeeds();
+            } else {
+                document.getElementById('auth-overlay').style.display = 'flex';
+            }
+        });
+
+        // FEEDS
+        function postStatus() {
+            const t = document.getElementById('status-text').value;
+            if(!t) return;
+            db.ref('feeds').push({ name: me.username, text: t, av: me.av, role: me.role, time: Date.now() });
+            document.getElementById('status-text').value = "";
+        }
+        function loadFeeds() {
+            db.ref('feeds').limitToLast(10).on('value', s => {
+                const c = document.getElementById('feed-container'); c.innerHTML = "";
+                s.forEach(p => {
+                    const d = p.val();
+                    c.innerHTML += `<div class="feed-card">
+                        <div class="feed-header"><img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=${d.av}">
+                        <b class="role-${d.role}">${d.name}</b></div><div style="font-size:14px;">${d.text}</div></div>`;
+                });
+            });
+        }
+
+        // CHAT & ARENA
+        function joinRoom(id, title) {
+            activeRid = id;
+            document.getElementById('chat-title').innerText = title;
+            switchView('chat');
+            const box = document.getElementById('chat-messages-list');
+            db.ref(`messages/${id}`).limitToLast(40).on('value', s => {
+                box.innerHTML = "";
+                s.forEach(m => {
+                    const d = m.val();
+                    const isMe = d.uid === auth.currentUser.uid;
+                    const tag = d.role === 'owner' ? '<span class="tag tag-a">OWN</span>' : (['merchant','submerchant','redmerchant'].includes(d.role) ? '<span class="tag tag-m">MER</span>' : '');
+                    box.innerHTML += `<div class="bubble ${isMe ? 'sent' : 'received'}">
+                        <small class="role-${d.role}"><img src="https://api.dicebear.com/7.x/pixel-art/svg?seed=${d.av}" class="av-head">${d.name}${tag}</small>${d.text}</div>`;
+                });
+                box.scrollTop = box.scrollHeight;
+            });
+
+            if (id === 'game_central') {
+                db.ref('arenas/cricket').on('value', s => {
+                    const g = s.val(); const bar = document.getElementById('game-arena-strip');
+                    if (g) {
+                        bar.style.display = 'block'; bar.innerText = `ARENA: ${g.status} | Stakes: 50 CR`;
+                        if (g.status === 'idle' && Object.keys(g.players||{}).length >= 2 && !g.lock) triggerGame();
+                    } else bar.style.display = 'none';
+                });
+            }
+        }
+
+        function triggerGame() {
+            db.ref('arenas/cricket/lock').set(true);
+            setTimeout(() => {
+                const bowl = Math.floor(Math.random() * 6) + 1;
+                db.ref('arenas/cricket/players').once('value', s => {
+                    const players = s.val() || {}; let logs = [`Bowl: ${bowl}`];
+                    Object.keys(players).forEach(uid => {
+                        const p = players[uid];
+                        if (p.status === 'batting') {
+                            const bat = p.move || Math.floor(Math.random() * 6) + 1;
+                            if (bat === bowl) { db.ref(`arenas/cricket/players/${uid}/status`).set('out'); logs.push(`${p.name} OUT (${p.score})`); }
+                            else { db.ref(`arenas/cricket/players/${uid}`).update({ score: p.score + bat, move: null }); }
+                        }
+                    });
+                    db.ref(`messages/game_central`).push({ uid: 'BOT', text: logs.join(" | ") });
+                    db.ref('arenas/cricket/players').once('value', n => {
+                        const inMatch = Object.values(n.val() || {}).filter(x => x.status === 'batting');
+                        if (inMatch.length === 0) db.ref('arenas/cricket').set({ status: 'idle', players: null, lock: false });
+                        else db.ref('arenas/cricket/lock').set(false);
+                    });
+                });
+            }, 8000);
+        }
+
+        function sendChatMessage() {
+            const i = document.getElementById('chat-input-field');
+            if(!i.value || !activeRid) return;
+            const t = i.value.trim();
+            if (t === "!j") {
+                db.ref(`arenas/cricket/players/${me.uid}`).set({ name: me.username, status: 'batting', score: 0 });
+                i.value = ""; return;
+            }
+            if (t.startsWith("!b")) {
+                db.ref(`arenas/cricket/players/${me.uid}/move`).set(parseInt(t.split(" ")[1]));
+                i.value = ""; return;
+            }
+            db.ref(`messages/${activeRid}`).push({ uid: me.uid, name: me.username, text: t, av: me.av, role: me.role, time: Date.now() });
+            i.value = "";
+        }
+
+        // ADMIN
+        function adminAction(type) {
+            const u = document.getElementById('target-user').value.toLowerCase();
+            const a = document.getElementById('cr-amt').value;
+            db.ref('usernames/'+u).once('value', s => {
+                const uid = s.val(); if(!uid) return alert("User not found");
+                if(type==='credits') db.ref(`users/${uid}/credits`).set(firebase.database.ServerValue.increment(parseInt(a)));
+                else db.ref(`users/${uid}/role`).set(type);
+                alert("Action Completed!");
+            });
+        }
+
+        // NAV
+        function switchView(id, el) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + id).classList.add('active');
+            if(el) { document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active')); el.classList.add('active'); }
+        }
+
+        function logout() { auth.signOut().then(()=>location.reload()); }
+    </script>
+</body>
+</html>
