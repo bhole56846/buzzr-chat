@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CircleHuB Avatar Maker</title>
+<style>
+:root {
+  --bg:#0d1117; --panel:#161b22; --surface:#21262d;
+  --border:#30363d; --cyan:#00f5ff; --orange:#ff7300;
+  --text:#e6edf3; --muted:#8b949e; --selected:#ff7300;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:'Inter',sans-serif;}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:430px;margin:0 auto;}
+
+/* Header */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;
+  background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;}
+.hdr-title{font-size:16px;font-weight:700;color:var(--text);}
+.hdr-btn{height:36px;border-radius:10px;border:1px solid var(--border);background:var(--surface);
+  display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;
+  color:var(--text);padding:0 12px;gap:5px;font-size:13px;font-weight:600;}
+.hdr-btn.save{background:var(--orange);border-color:var(--orange);color:#fff;}
+.hdr-btn:active{opacity:0.75;}
+
+/* Preview area */
+.preview-area{flex-shrink:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:14px 14px 8px;}
+.preview-stage{position:relative;width:180px;height:200px;border-radius:20px;overflow:hidden;
+  background:#f8f4f0;box-shadow:0 8px 32px rgba(0,0,0,0.6);}
+.preview-stage img.scene-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.preview-stage .avatar-img{position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:120px;height:auto;image-rendering:auto;}
+.preview-actions{display:flex;gap:8px;margin-top:10px;}
+.preview-btn{padding:7px 16px;border-radius:20px;border:1px solid var(--border);
+  background:var(--surface);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;}
+.preview-btn.active{background:rgba(255,115,0,0.15);border-color:var(--orange);color:var(--orange);}
+
+/* Category tabs */
+.cat-tabs{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;
+  background:var(--panel);border-bottom:1px solid var(--border);}
+.cat-tabs::-webkit-scrollbar{display:none;}
+.cat-tab{flex-shrink:0;padding:7px 16px;border-radius:20px;border:1.5px solid var(--border);
+  background:var(--surface);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.cat-tab.active{background:var(--orange);border-color:var(--orange);color:#fff;}
+
+/* Sub-tabs */
+.sub-tabs{display:flex;gap:6px;padding:6px 12px;overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+.sub-tabs::-webkit-scrollbar{display:none;}
+.sub-tab{flex-shrink:0;padding:5px 14px;border-radius:16px;border:1.5px solid var(--border);
+  background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;}
+.sub-tab.active{border-color:var(--orange);color:var(--orange);background:rgba(255,115,0,0.08);}
+
+/* Options grid */
+.opts{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  padding:8px 10px 20px;align-content:start;}
+.opt{background:var(--surface);border-radius:12px;border:2px solid var(--border);
+  aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;cursor:pointer;transition:all 0.12s;overflow:hidden;position:relative;}
+.opt:active{transform:scale(0.93);}
+.opt.sel{border-color:var(--orange);background:rgba(255,115,0,0.1);}
+.opt.sel::after{content:"✓";position:absolute;top:5px;right:7px;font-size:12px;
+  font-weight:800;color:var(--orange);}
+.opt-img{width:80%;height:75%;object-fit:contain;image-rendering:auto;}
+.opt-img.scene{width:100%;height:80%;border-radius:8px;}
+.opt-lbl{font-size:10px;color:var(--muted);font-weight:600;text-align:center;padding:0 4px;}
+.opt.sel .opt-lbl{color:var(--orange);}
+.no-icon{font-size:28px;color:var(--muted);}
+
+/* Loading spinner */
+.loading{display:flex;align-items:center;justify-content:center;height:60px;color:var(--muted);font-size:13px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-btn" id="back-btn">← Back</div>
+    <div class="hdr-title">Avatar Maker</div>
+    <div style="display:flex;gap:6px;">
+      <div class="hdr-btn" id="random-btn">🔀</div>
+      <div class="hdr-btn save" id="save-btn">💾 Save</div>
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <div class="preview-area">
+    <div class="preview-stage" id="preview-stage">
+      <img class="scene-img" id="scene-img" src="" style="display:none;">
+      <img class="avatar-img" id="avatar-preview" src="" alt="Avatar">
+    </div>
+    <div class="preview-actions">
+      <div class="preview-btn active" id="prev-chibi">Chibi</div>
+      <div class="preview-btn" id="prev-circle">Circle</div>
+      <div class="preview-btn" id="prev-pixel">Pixel</div>
+    </div>
+  </div>
+
+  <!-- Category tabs -->
+  <div class="cat-tabs" id="cat-tabs">
+    <div class="cat-tab active" data-cat="style">Style</div>
+    <div class="cat-tab" data-cat="face">Face</div>
+    <div class="cat-tab" data-cat="hair">Hair</div>
+    <div class="cat-tab" data-cat="outfit">Outfit</div>
+    <div class="cat-tab" data-cat="color">Color</div>
+    <div class="cat-tab" data-cat="scene">Scene</div>
+  </div>
+
+  <!-- Sub-tabs -->
+  <div class="sub-tabs" id="sub-tabs"></div>
+
+  <!-- Options -->
+  <div class="opts" id="opts-grid"></div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+// CIRCLEHUB AVATAR MAKER v2 — DiceBear + Custom Layers
+// Uses DiceBear API for high-quality chibi/anime style avatars
+// ════════════════════════════════════════════════════════════════════
+
+const DB = "https://api.dicebear.com/9.x";
+
+// Avatar state
+const S = {
+  style: "adventurer",        // dicebear style
+  seed: "CircleHuB",
+  // Face
+  eyes: "variant01",
+  eyebrows: "variant01",
+  mouth: "happy01",
+  nose: "variant01",
+  earrings: "",
+  // Hair
+  hair: "short01",
+  hairColor: "0e0e0e",
+  // Outfit
+  clothing: "variant01",
+  clothingColor: "1e88e5",
+  // Skin
+  skinColor: "f2d3b1",
+  // Scene/background
+  scene: "none",
+  backgroundColor: "",
+  // Style mode
+  previewMode: "chibi",
+};
+
+// ── STYLE DEFINITIONS ───────────────────────────────────────────────
+const STYLES = {
+  adventurer: { label:"Adventurer", desc:"Chibi anime" },
+  "adventurer-neutral": { label:"Neutral", desc:"Gender neutral" },
+  "big-smile": { label:"Big Smile", desc:"Cute & happy" },
+  avataaars: { label:"Cartoon", desc:"Cartoon style" },
+  "lorelei-neutral": { label:"Lorelei", desc:"Illustrated" },
+  personas: { label:"Persona", desc:"Flat design" },
+  micah: { label:"Micah", desc:"Geometric" },
+  notionists: { label:"Notion", desc:"Sketch style" },
+  "open-peeps": { label:"Peeps", desc:"Line art" },
+  pixel: { label:"Pixel", desc:"8-bit retro" },
+};
+
+// ── FEATURE OPTIONS PER STYLE ───────────────────────────────────────
+// Adventurer options (most complete chibi style)
+const ADV_EYES = ["variant01","variant02","variant03","variant04","variant05",
+                  "variant06","variant07","variant08","variant09","variant10",
+                  "variant11","variant12","variant13","variant14","variant15",
+                  "variant16","variant17","variant18","variant19","variant20",
+                  "variant21","variant22","variant23","variant24","variant25"];
+const ADV_BROWS = ["variant01","variant02","variant03","variant04","variant05",
+                   "variant06","variant07","variant08","variant09","variant10",
+                   "variant11","variant12","variant13","variant14","variant15"];
+const ADV_MOUTH = ["braces","concerned01","concerned02","default01","default02",
+                   "default03","default04","default05","drool01","drool02",
+                   "eating01","eating02","emoAngry","emoFrown","emoSad",
+                   "emoSmile","emoTongue","happy01","happy02","happy03",
+                   "happy04","happy05","happy06","happy07","happy08",
+                   "sad01","sad02","sad03","sad04","sad05","smirk01","smirk02",
+                   "teeth01","teeth02","teeth03","teeth04","teeth05","teeth06",
+                   "teeth07","teeth08","teeth09","teeth10","teeth11","teeth12",
+                   "unhappy01","unhappy02","unhappy03","unhappy04","unhappy05",
+                   "worried01","worried02","worried03","worried04","worried05"];
+const ADV_HAIR = ["long01","long02","long03","long04","long05","long06",
+                  "long07","long08","long09","long10","long11","long12",
+                  "long13","long14","long15","long16","long17","long18",
+                  "long19","long20","long21","long22","long23","long24",
+                  "long25","long26","short01","short02","short03","short04",
+                  "short05","short06","short07","short08","short09","short10",
+                  "short11","short12","short13","short14","short15","short16",
+                  "short17","short18","short19","short20","short21","short22"];
+const ADV_EARRINGS = ["","variant01","variant02","variant03","variant04",
+                      "variant05","variant06"];
+
+const HAIR_COLORS = [
+  {label:"Black",    val:"0e0e0e"}, {label:"Dark",     val:"2c1b0e"},
+  {label:"Brown",    val:"6a3728"}, {label:"Auburn",   val:"a55728"},
+  {label:"Ginger",   val:"c93305"}, {label:"Blonde",   val:"d6b370"},
+  {label:"Platinum", val:"ecdcbf"}, {label:"White",    val:"f4f4f4"},
+  {label:"Red",      val:"b5000f"}, {label:"Pink",     val:"e75480"},
+  {label:"Purple",   val:"6b0ac9"}, {label:"Blue",     val:"0057e7"},
+  {label:"Cyan",     val:"00c5cd"}, {label:"Green",    val:"3d6b44"},
+  {label:"Silver",   val:"a0a0a0"}, {label:"Orange",   val:"e86100"},
+];
+
+const SKIN_COLORS = [
+  {label:"Porcelain", val:"f2d3b1"}, {label:"Light",    val:"f5cfa0"},
+  {label:"Beige",     val:"edb98a"}, {label:"Warm",     val:"d08b5b"},
+  {label:"Medium",    val:"ae5d29"}, {label:"Caramel",  val:"a0522d"},
+  {label:"Brown",     val:"614335"}, {label:"Dark",     val:"4a312c"},
+  {label:"Ebony",     val:"2d1b10"}, {label:"Mocha",    val:"6e4330"},
+];
+
+const CLOTH_COLORS = [
+  {label:"Blue",     val:"1e88e5"}, {label:"Navy",     val:"1a237e"},
+  {label:"Teal",     val:"00897b"}, {label:"Green",    val:"2e7d32"},
+  {label:"Lime",     val:"7cb342"}, {label:"Yellow",   val:"f9a825"},
+  {label:"Orange",   val:"e65100"}, {label:"Red",      val:"c62828"},
+  {label:"Pink",     val:"ad1457"}, {label:"Purple",   val:"6a1b9a"},
+  {label:"Grey",     val:"546e7a"}, {label:"Black",    val:"1b1b1b"},
+  {label:"White",    val:"f5f5f5"}, {label:"Gold",     val:"c8960c"},
+  {label:"Brown",    val:"5d4037"}, {label:"Maroon",   val:"880e4f"},
+];
+
+const ADV_CLOTHING = ["variant01","variant02","variant03","variant04","variant05"];
+
+const SCENES = [
+  {id:"none",    label:"None",   bg:"#f8f4f0", img:""},
+  {id:"winter",  label:"Winter", bg:"#1a2a4a",
+   img:`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+     <defs><linearGradient id="sw" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0%" stop-color="#1a2a4a"/><stop offset="60%" stop-color="#2a4a6a"/>
+       <stop offset="100%" stop-color="#8b6a3a"/></linearGradient></defs>
+     <rect width="200" height="200" fill="url(#sw)"/>
+     <rect x="20" y="30" width="8" height="100" fill="#4a3020" rx="3"/>
+     <rect x="150" y="40" width="7" height="85" fill="#4a3020" rx="3"/>
+     <circle cx="30" cy="15" r="2" fill="white"/><circle cx="80" cy="25" r="1.5" fill="white"/>
+     <circle cx="120" cy="10" r="2" fill="white"/><circle cx="170" cy="20" r="1.5" fill="white"/>
+     <circle cx="50" cy="40" r="1" fill="white"/><circle cx="140" cy="35" r="2" fill="white"/>
+   </svg>`},
+  {id:"summer",  label:"Summer", bg:"#87ceeb",
+   img:`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+     <defs><linearGradient id="ss" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0%" stop-color="#87ceeb"/><stop offset="55%" stop-color="#b8e8ff"/>
+       <stop offset="55%" stop-color="#4ade80"/><stop offset="100%" stop-color="#16a34a"/></linearGradient></defs>
+     <rect width="200" height="200" fill="url(#ss)"/>
+     <circle cx="160" cy="30" r="22" fill="#fbbf24" opacity="0.9"/>
+     <ellipse cx="60" cy="45" rx="30" ry="12" fill="white" opacity="0.8"/>
+     <ellipse cx="45" cy="40" rx="20" ry="10" fill="white" opacity="0.8"/>
+   </svg>`},
+  {id:"autumn",  label:"Autumn", bg:"#7c2d12",
+   img:`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+     <defs><linearGradient id="sa" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0%" stop-color="#7c2d12"/><stop offset="40%" stop-color="#c2410c"/>
+       <stop offset="70%" stop-color="#d97706"/><stop offset="100%" stop-color="#92400e"/></linearGradient></defs>
+     <rect width="200" height="200" fill="url(#sa)"/>
+     <rect x="15" y="20" width="10" height="120" fill="#5c2d0a" rx="4"/>
+     <rect x="160" y="30" width="9" height="100" fill="#5c2d0a" rx="4"/>
+     <text x="30" y="80" font-size="18" opacity="0.8">🍂</text>
+     <text x="140" y="60" font-size="14" opacity="0.7">🍁</text>
+     <text x="80" y="50" font-size="12" opacity="0.6">🍂</text>
+   </svg>`},
+  {id:"spring",  label:"Spring", bg:"#86efac",
+   img:`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+     <defs><linearGradient id="sp" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0%" stop-color="#bfdbfe"/><stop offset="50%" stop-color="#93c5fd"/>
+       <stop offset="50%" stop-color="#86efac"/><stop offset="100%" stop-color="#4ade80"/></linearGradient></defs>
+     <rect width="200" height="200" fill="url(#sp)"/>
+     <text x="20" y="50" font-size="24">🌸</text>
+     <text x="150" y="40" font-size="20">🌺</text>
+     <text x="70" y="30" font-size="18">☀️</text>
+     <text x="10" y="140" font-size="16">🌻</text>
+     <text x="160" y="130" font-size="16">🌼</text>
+   </svg>`},
+  {id:"city",    label:"City",   bg:"#0f172a",
+   img:`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+     <defs><linearGradient id="sc" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#1e293b"/></linearGradient></defs>
+     <rect width="200" height="200" fill="url(#sc)"/>
+     <rect x="0" y="80" width="40" height="120" fill="#1e3a5f"/>
+     <rect x="35" y="60" width="50" height="140" fill="#1e2d5f"/>
+     <rect x="80" y="90" width="35" height="110" fill="#2d1b69"/>
+     <rect x="130" y="70" width="45" height="130" fill="#1e3a5f"/>
+     <rect x="170" y="95" width="30" height="105" fill="#1e2d5f"/>
+     <circle cx="170" cy="20" r="8" fill="#fbbf24" opacity="0.7"/>
+     <circle cx="30" cy="15" r="1.5" fill="white"/><circle cx="90" cy="25" r="1" fill="white"/>
+     <circle cx="150" cy="10" r="1.5" fill="white"/><circle cx="60" cy="35" r="1" fill="white"/>
+   </svg>`},
+  {id:"beach",   label:"Beach",  bg:"#fed7aa",
+   img:`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+     <defs><linearGradient id="sb" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0%" stop-color="#7dd3fc"/><stop offset="45%" stop-color="#38bdf8"/>
+       <stop offset="45%" stop-color="#fed7aa"/><stop offset="100%" stop-color="#fbbf24"/></linearGradient></defs>
+     <rect width="200" height="200" fill="url(#sb)"/>
+     <circle cx="160" cy="28" r="20" fill="#fbbf24"/>
+     <text x="10" y="130" font-size="22">🌴</text>
+     <text x="160" y="125" font-size="18">🌴</text>
+   </svg>`},
+  {id:"fantasy", label:"Fantasy",bg:"#1e0a3c",
+   img:`<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+     <defs><linearGradient id="sf" x1="0" y1="0" x2="0" y2="1">
+       <stop offset="0%" stop-color="#1e0a3c"/><stop offset="100%" stop-color="#2d1b69"/></linearGradient></defs>
+     <rect width="200" height="200" fill="url(#sf)"/>
+     <circle cx="100" cy="30" r="15" fill="#7c3aed" opacity="0.4"/>
+     <circle cx="50" cy="50" r="8" fill="#a78bfa" opacity="0.3"/>
+     <circle cx="160" cy="40" r="10" fill="#7c3aed" opacity="0.35"/>
+     <text x="15" y="30" font-size="10">✨</text><text x="170" y="25" font-size="8">⭐</text>
+     <text x="85" y="15" font-size="8">🌙</text><text x="140" y="60" font-size="8">✨</text>
+     <text x="30" y="70" font-size="8">⭐</text>
+   </svg>`},
+];
+
+// ════════════════════════════════════════════════════════════════════
+// URL BUILDER
+// ════════════════════════════════════════════════════════════════════
+function buildUrl(overrides = {}) {
+  const st = Object.assign({}, S, overrides);
+  const params = new URLSearchParams();
+
+  if (st.style === "adventurer" || st.style === "adventurer-neutral") {
+    if (st.eyes)      params.set("eyes", st.eyes);
+    if (st.eyebrows)  params.set("eyebrows", st.eyebrows);
+    if (st.mouth)     params.set("mouth", st.mouth);
+    if (st.hair)      params.set("hair", st.hair);
+    if (st.earrings)  params.set("earrings", st.earrings);
+    params.set("hairColor", st.hairColor);
+    params.set("skinColor", st.skinColor);
+    params.set("clothingColor", st.clothingColor);
+    if (st.clothing)  params.set("clothing", st.clothing);
+  } else if (st.style === "avataaars") {
+    params.set("hairColor", st.hairColor);
+    params.set("skinColor", st.skinColor);
+  } else {
+    params.set("seed", st.seed + st.hair + st.eyes);
+  }
+
+  params.set("size", "256");
+  params.set("backgroundColor", st.backgroundColor || "transparent");
+  const url = `${DB}/${st.style}/svg?seed=${encodeURIComponent(st.seed)}&${params.toString()}`;
+  return url;
+}
+
+function updatePreview() {
+  const img = document.getElementById("avatar-preview");
+  img.src = buildUrl();
+  img.onerror = () => {
+    // fallback to simpler URL if params fail
+    img.src = `${DB}/${S.style}/svg?seed=${encodeURIComponent(S.seed)}&size=256`;
+  };
+
+  // Scene
+  const scene = SCENES.find(sc => sc.id === S.scene) || SCENES[0];
+  const stage = document.getElementById("preview-stage");
+  stage.style.background = scene.bg;
+  const scImg = document.getElementById("scene-img");
+  if (scene.img) {
+    const blob = new Blob([scene.img], {type:"image/svg+xml"});
+    scImg.src = URL.createObjectURL(blob);
+    scImg.style.display = "block";
+  } else {
+    scImg.style.display = "none";
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// UI STATE
+// ════════════════════════════════════════════════════════════════════
+let activeCat = "style";
+let activeSub = "";
+
+const CAT_CONFIG = {
+  style: {
+    subs: [],
+    render: () => renderStyleGrid(),
+  },
+  face: {
+    subs: ["Eyes","Eyebrows","Mouth","Earrings","Skin"],
+    render: (sub) => {
+      if (!sub || sub === "Eyes")     renderVariantGrid("eyes", ADV_EYES, "eyes");
+      if (sub === "Eyebrows")         renderVariantGrid("eyebrows", ADV_BROWS, "eyebrows");
+      if (sub === "Mouth")            renderVariantGrid("mouth", ADV_MOUTH, "mouth");
+      if (sub === "Earrings")         renderVariantGrid("earrings", ADV_EARRINGS, "earrings");
+      if (sub === "Skin")             renderColorGrid("skinColor", SKIN_COLORS);
+    },
+  },
+  hair: {
+    subs: ["Style","Color"],
+    render: (sub) => {
+      if (!sub || sub === "Style")  renderHairGrid();
+      if (sub === "Color")          renderColorGrid("hairColor", HAIR_COLORS);
+    },
+  },
+  outfit: {
+    subs: ["Style","Color"],
+    render: (sub) => {
+      if (!sub || sub === "Style")  renderVariantGrid("clothing", ADV_CLOTHING, "clothing");
+      if (sub === "Color")          renderColorGrid("clothingColor", CLOTH_COLORS);
+    },
+  },
+  color: {
+    subs: ["Skin","Hair","Outfit"],
+    render: (sub) => {
+      if (!sub || sub === "Skin")   renderColorGrid("skinColor", SKIN_COLORS);
+      if (sub === "Hair")           renderColorGrid("hairColor", HAIR_COLORS);
+      if (sub === "Outfit")         renderColorGrid("clothingColor", CLOTH_COLORS);
+    },
+  },
+  scene: {
+    subs: [],
+    render: () => renderSceneGrid(),
+  },
+};
+
+// ════════════════════════════════════════════════════════════════════
+// RENDERERS
+// ════════════════════════════════════════════════════════════════════
+function renderStyleGrid() {
+  const grid = document.getElementById("opts-grid");
+  grid.innerHTML = Object.entries(STYLES).map(([key, val]) => `
+    <div class="opt${S.style === key ? " sel" : ""}" data-action="style:${key}">
+      <img class="opt-img" src="${DB}/${key}/svg?seed=CircleHuB&size=80&backgroundColor=f8f4f0"
+           loading="lazy" onerror="this.style.display='none'">
+      <div class="opt-lbl">${val.label}</div>
+    </div>`).join("");
+}
+
+function renderVariantGrid(stateKey, variants, urlParam) {
+  const grid = document.getElementById("opts-grid");
+  // Add "none" option for earrings
+  const items = stateKey === "earrings"
+    ? [{ key: "", label: "None" }, ...variants.map(v => ({key:v, label:v.replace("variant","").replace(/^0+/,"")}))]
+    : variants.map((v,i) => ({key:v, label: v.replace("variant","#").replace("long","Long ").replace("short","Short ").replace(/^0+/,"")}));
+
+  grid.innerHTML = `<div class="loading" style="grid-column:1/-1;">Loading previews…</div>`;
+
+  // Build grid after brief pause to show loading
+  setTimeout(() => {
+    grid.innerHTML = items.map(({key, label}) => {
+      const isSelected = S[stateKey] === key;
+      const previewUrl = key
+        ? buildUrl({ [stateKey]: key, backgroundColor: "f8f4f0", size: 80 })
+        : "";
+      return `<div class="opt${isSelected ? " sel" : ""}" data-action="${stateKey}:${key}">
+        ${key
+          ? `<img class="opt-img" src="${previewUrl}" loading="lazy" onerror="this.parentNode.querySelector('.no-icon') && (this.style.display='none')">`
+          : `<div class="no-icon">⊘</div>`}
+        <div class="opt-lbl">${label || "None"}</div>
+      </div>`;
+    }).join("");
+  }, 50);
+}
+
+function renderHairGrid() {
+  renderVariantGrid("hair", ADV_HAIR, "hair");
+}
+
+function renderColorGrid(stateKey, colors) {
+  const grid = document.getElementById("opts-grid");
+  grid.innerHTML = colors.map(({label, val}) => `
+    <div class="opt${S[stateKey] === val ? " sel" : ""}" data-action="${stateKey}:${val}">
+      <div style="width:56px;height:56px;border-radius:50%;background:#${val};
+        box-shadow:0 2px 8px rgba(0,0,0,0.4);"></div>
+      <div class="opt-lbl">${label}</div>
+    </div>`).join("");
+}
+
+function renderSceneGrid() {
+  const grid = document.getElementById("opts-grid");
+  grid.innerHTML = SCENES.map(sc => {
+    const isSelected = S.scene === sc.id;
+    const previewHtml = sc.img
+      ? `<div style="width:100%;height:75%;border-radius:8px;overflow:hidden;background:${sc.bg};">
+           <svg viewBox="0 0 200 200" style="width:100%;height:100%;">${sc.img.replace(/<svg[^>]*>/,'').replace('</svg>','')}</svg>
+         </div>`
+      : `<div style="width:100%;height:75%;border-radius:8px;background:#f8f4f0;display:flex;align-items:center;justify-content:center;font-size:24px;">🌿</div>`;
+    return `<div class="opt${isSelected ? " sel" : ""}" data-action="scene:${sc.id}">
+      ${previewHtml}
+      <div class="opt-lbl">${sc.label}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderSubTabs() {
+  const cfg = CAT_CONFIG[activeCat];
+  const subEl = document.getElementById("sub-tabs");
+  if (!cfg.subs.length) { subEl.innerHTML = ""; return; }
+  if (!activeSub) activeSub = cfg.subs[0];
+  subEl.innerHTML = cfg.subs.map(s => `
+    <div class="sub-tab${activeSub === s ? " active" : ""}" data-sub="${s}">${s}</div>`).join("");
+}
+
+function renderAll() {
+  renderSubTabs();
+  CAT_CONFIG[activeCat].render(activeSub);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// EVENTS
+// ════════════════════════════════════════════════════════════════════
+document.getElementById("cat-tabs").addEventListener("click", (e) => {
+  const tab = e.target.closest("[data-cat]");
+  if (!tab) return;
+  activeCat = tab.dataset.cat;
+  activeSub = "";
+  document.querySelectorAll(".cat-tab").forEach(t => t.classList.toggle("active", t.dataset.cat === activeCat));
+  renderAll();
+});
+
+document.getElementById("sub-tabs").addEventListener("click", (e) => {
+  const tab = e.target.closest("[data-sub]");
+  if (!tab) return;
+  activeSub = tab.dataset.sub;
+  document.querySelectorAll(".sub-tab").forEach(t => t.classList.toggle("active", t.dataset.sub === activeSub));
+  CAT_CONFIG[activeCat].render(activeSub);
+});
+
+document.getElementById("opts-grid").addEventListener("click", (e) => {
+  const opt = e.target.closest("[data-action]");
+  if (!opt) return;
+  const [key, val] = opt.dataset.action.split(":");
+  S[key] = val;
+  if (key === "style") {
+    // Reset feature params when switching style
+    S.seed = "CircleHuB" + Math.random().toString(36).slice(2,6);
+  }
+  updatePreview();
+  // Re-render current grid to show selection
+  document.querySelectorAll(`[data-action^="${key}:"]`).forEach(el => {
+    el.classList.toggle("sel", el.dataset.action === opt.dataset.action);
+    const after = el.querySelector(".opt-lbl");
+    if (after) after.style.color = el.classList.contains("sel") ? "var(--orange)" : "";
+  });
+  // Update checkmark
+  document.querySelectorAll(`[data-action^="${key}:"]`).forEach(el => {
+    el.classList.toggle("sel", el.dataset.action === `${key}:${val}`);
+  });
+});
+
+// Randomize
+document.getElementById("random-btn").addEventListener("click", () => {
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  S.eyes = pick(ADV_EYES);
+  S.eyebrows = pick(ADV_BROWS);
+  S.mouth = pick(ADV_MOUTH);
+  S.hair = pick(ADV_HAIR);
+  S.hairColor = HAIR_COLORS[Math.floor(Math.random()*HAIR_COLORS.length)].val;
+  S.skinColor = SKIN_COLORS[Math.floor(Math.random()*SKIN_COLORS.length)].val;
+  S.clothingColor = CLOTH_COLORS[Math.floor(Math.random()*CLOTH_COLORS.length)].val;
+  S.clothing = pick(ADV_CLOTHING);
+  S.scene = SCENES[Math.floor(Math.random()*SCENES.length)].id;
+  S.seed = "rnd" + Date.now();
+  updatePreview();
+  renderAll();
+});
+
+// Preview mode buttons
+["prev-chibi","prev-circle","prev-pixel"].forEach(id => {
+  document.getElementById(id).addEventListener("click", () => {
+    document.querySelectorAll(".preview-btn").forEach(b => b.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    const mode = id.replace("prev-","");
+    if (mode === "chibi") {
+      S.style = "adventurer";
+    } else if (mode === "circle") {
+      S.style = "big-smile";
+    } else {
+      S.style = "pixel";
+    }
+    updatePreview();
+    if (activeCat === "style") renderStyleGrid();
+  });
+});
+
+// Save
+document.getElementById("save-btn").addEventListener("click", () => {
+  const avatarUrl = buildUrl();
+  const savedData = { url: avatarUrl, state: JSON.stringify(S) };
+  // Post message to parent (CircleHuB main app)
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: "avatarSaved", avatarUrl, avatarState: JSON.stringify(S) }, "*");
+  } else {
+    // Standalone: download
+    const a = document.createElement("a");
+    a.href = avatarUrl; a.target="_blank";
+    a.click();
+    alert("Avatar URL copied! Integrate with CircleHuB to save directly.");
+  }
+});
+
+// Back
+document.getElementById("back-btn").addEventListener("click", () => {
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: "avatarClosed" }, "*");
+  } else history.back();
+});
+
+// ════════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════════
+updatePreview();
+renderAll();
+</script>
+</body>
+</html>
